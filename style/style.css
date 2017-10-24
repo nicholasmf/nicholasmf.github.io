@@ -1,0 +1,177 @@
+/************************** Lists *******************/
+#instructions, #finalList {
+    transition: 0.2s ease-in-out;
+    max-height: 124px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#instructions li {
+    opacity: 1;
+    transition-duration: 2s;
+    left: 0;
+}
+
+#instructions li.out {
+    left: 130%;
+    transform: scale(0, 1);
+}
+
+#instructions li.active {
+    transform: scale(1.2);
+    font-weight: bold;
+}
+
+/************************* Pipeline **************************/
+.pipeline {
+    height: 100px;
+    position: absolute;
+    width: 100%;
+}
+
+.pipeline:nth-child(2) {
+    top: 100px;
+}
+
+.pipeline-item { /*eh o quadradinho, caracteristicas do formato, sombra (td menos cor e posicao; animacao... vai td aqui) */
+    top: 52px;
+    width: 42px;
+    height: 42px;
+    border-radius: 5px;
+    box-shadow: 0 1px 2px 0 grey;
+    border: 1px solid lightgrey;
+    font-size: 10px;
+    vertical-align: center;
+    text-align: center;
+    position: absolute;
+    transition: all 1s ease-in-out;
+
+    animation-name: pipeline-item-in;
+    animation-duration: .2s;
+}
+
+@keyframes pipeline-item-in {/*animacao dos bloquinhos q entram no pipe (engordam e emagrecem) */
+    from {
+        transform: scale(2, 1);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+.pipeline {
+    height: 100px;
+	width: 100%;
+    position: absolute;
+}
+
+.pipeline:nth-child(2) {
+    top: 100px;
+}
+
+
+.pipeline-item.fetch {
+    left: 10%; /*so marca a posicao, basicamente */
+}
+
+.pipeline-item.decode {
+    left: 30%;
+}
+
+.pipeline-item.load {
+    left: 50%;
+}
+
+.pipeline-item.execute {
+    left: 70%;
+}
+
+.pipeline-item.store {
+    left: 90%;
+}
+
+.pipeline-item.out {
+    left: 100%;
+    opacity: 0;
+}
+
+#finalList li {
+    animation-name: final-list-in;
+    animation-duration: 1s;
+}
+
+@keyframes final-list-in {
+    from {
+        transform: translateY(-100px);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/************************ Data Memory *********************/
+#dataMemory {
+    height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/*************************** Registers bank ***************/
+#registersContainer {
+    height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+#registersContainer .col-xs-1 {
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+/************************ BTB ****************************/
+#cacheContainer {
+    height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-left: 25px;
+}
+
+/******************** General ***************/
+.background-info {
+    background-color: #d9edf7;
+}
+
+.background-success {
+    background-color: #dff0d8;
+}
+
+.background-danger {
+    background-color: #f2dede;
+}
+
+.background-disabled {
+    background-color: #dfdfdf;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.no-padding-h { 
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.margin-bottom-20 {
+    margin-bottom: 20px;
+}
+
+
+/************** Overwrite ****************/
+.panel-heading {
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+}

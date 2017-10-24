@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Simulador</title>
+
+        <!-- Firebase -->
+        <script src="https://www.gstatic.com/firebasejs/4.3.0/firebase.js"></script>
+        <script>
+          // Initialize Firebase
+          var config = {
+            apiKey: "AIzaSyD85l3Fj4FVrqcB-23_tt7rqqfaIzQnmDU",
+            authDomain: "tcc1-49d26.firebaseapp.com",
+            databaseURL: "https://tcc1-49d26.firebaseio.com",
+            projectId: "tcc1-49d26",
+            storageBucket: "",
+            messagingSenderId: "454052950426"
+          };
+          firebase.initializeApp(config);
+        </script>
+        <!-- Jquery and Bootstrap -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+        
+        <!-- Database handler -->
+        <script type="text/javascript" src="./javascript/firebase_handler.js"></script>
+
+        <!-- General Purpose functions -->
+        <script type="text/javascript" src="./javascript/aux-functions.js"></script>
+
+        <!-- Caches -->
+        <script type="text/javascript" src="./javascript/caches/associative-cache.js"></script>
+
+        <!-- OoO -->
+        <script type="text/javascript" src="./javascript/dependency-handler/tomasulo.js"></script>
+        <script type="text/javascript" src="./javascript/dependency-handler/ignore.js"></script>
+		
+		<!-- Pipeline Steps -->
+		<script type="text/javascript" src="./javascript/pipeline-steps/base.js"></script>
+		
+        <!-- Pipelines -->
+        <script type="text/javascript" src="./javascript/processors/p1/pipeline.js"></script>
+		<script type="text/javascript" src="./javascript/processors/dummy/pipeline.js"></script>
+
+        <!-- Branch Predictors -->
+        <script type="text/javascript" src="./javascript/processors/p1/branch-prediction.js"></script>
+        <script type="text/javascript" src="./javascript/processors/p6/branch-prediction.js"></script>
+        <script type="text/javascript" src="./javascript/processors/dummy/branch-prediction.js"></script>
+				
+		<!-- P5 Pairing Verification -->
+		<script type="text/javascript" src="./javascript/processors/p1/pipelineissuing.js"></script>
+		
+		<!-- P5 Architecture -->
+		<script type="text/javascript" src="./javascript/arquitecture.js"></script>
+
+        <!-- Simulator script -->
+        <script type="text/javascript" src="./javascript/simulator.js"></script>
+
+        <!-- Instructions -->
+        <script type="text/javascript" src="./javascript/instructions.js"></script>
+		
+		<!-- InstructionsSets -->
+        <script type="text/javascript" src="./javascript/TestInstructionSet.js"></script>
+        <script type="text/javascript" src="./javascript/TestInstructionSet2.js"></script>
+
+		
+        <!-- Main script -->
+        <script type="text/javascript" src="./javascript/index.js"></script>
+        <link rel="stylesheet" type="text/css" href="./style/style.css"></link>
+    </head>
+    <body>
+        <nav class="navbar">
+            <h4>Opções</h4>
+            <form class="form-inline margin-bottom-20">
+                <!--<select class="form-control mr-sm-2" id="selectInstructionset" onchange="setInstructionset()">
+                    <option value="">-- Selectione um instruction set --</option>
+                    <option value="test">Test Instructionset</option>
+                    <option value="test2">Test2 Instructionset</option>                
+                </select>-->
+                <select class="form-control mr-sm-2" id="selectBP" onchange="setBP()">
+                    <option value="">-- Preditor de desvio --</option>
+                    <option value="btb">P5 BTB</option>
+                    <option value="apbtb">Predição adaptativa</option>
+                </select>
+
+                <select class="form-control mr-sm-2" id="selectPipe" onchange="setPipe()">
+                    <option value="">-- Pipeline --</option>
+                    <option value="dummy" selected>Simples</option>
+                    <option value="netburst" disabled>NetBurst</option>
+                    <option value="p5" disabled>P5</option>
+                </select>
+
+                <select class="form-control mr-sm-2" id="selectDH" onchange="setDH()">
+                    <option value="">-- Dependências --</option>
+                    <option value="ignore" selected>Ignorar</option>
+                    <option value="stall">Esperar dependência</option>
+                    <option value="OoO" disabled>Execução fora de ordem</option>
+                    <option value="OoOrenaming">Execução fora de ordem com renomeamento</option>
+                </select>
+
+                <select class="form-control mr-sm-2" id="selectTimeInterval" onchange="setTimeInterval()">
+                    <option value="">-- Intervalo de execução --</option>
+                    <option value="1" selected>1 segundo</option>
+                    <option value="2">2 segundos</option>
+                    <option value="5">5 segundos</option>
+                </select>
+
+                <select class="form-control mr-sm-2" id="selectCode" onchange="setCode()">
+                    <option value="">-- Codigo de programa</option>
+                    <option value="code1" selected>Programa 1</option>
+                    <option value="code2">Programa 2</option>
+                </select>
+
+                <input class="btn btn-primary my-sm-2" type="button" value="Start" onclick="start()"/>
+            </form>
+            <form class="form-inline">
+                <input class="btn btn-primary" type="button" value="Resume" onclick="resume()"/>
+                <input class="btn btn-primary" type="button" value="Stop" onclick="stop()"/>
+                <input class="btn btn-primary" type="button" value="Next" onclick="nextStep()"/>
+            </form>
+        </nav>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-2">
+                    <h3>Instruções</h3>
+                    <ul class="list-group" id="instructions"></ul>
+                </div>
+                <div class="col-md-8" id="pipelineDivGoesBeneath">
+                    <!--<div class="container pipeline">
+                    </div>-->
+                </div>
+                <div class="col-md-2">
+                    <h3>Final</h3>
+                    <ul class="list-group" id="finalList"></ul>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-4">
+                    <h2>Data memory</h2>
+                    <table id="dataMemory" class="table">
+                        <thead>
+                            <tr>
+                                <th>Memory</th>
+                                <th>0</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6</th>
+                                <th>7</th>
+                                <th>8</th>
+                                <th>9</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="col-md-5">
+                    <h2>Registers Bank</h2>
+                    <div id="registersContainer"></div>
+                </div>
+                <div class="col-md-3">
+                    <h2>BTB Cache</h2>
+                    <div class="row">
+                            <div class='col-xs-3 no-padding'>Set</div>
+                            <div class='col-xs-3 no-padding'>Tag</div>
+                            <div class='col-xs-3 no-padding'>Value</div>
+                            <div class='col-xs-3 no-padding'>Status</div>
+                    </div>
+                    <div id="cacheContainer">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
