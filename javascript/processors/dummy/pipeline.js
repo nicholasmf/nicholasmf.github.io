@@ -1,6 +1,11 @@
 function fetchExecution(instructions, pc, cycle, branchPredictor) {
-	this.setStepInstruction(instructions[pc]);
-	this.setStepInstructionCycle(cycle);
+	if(instructions[pc])
+	{
+		this.setStepInstruction(instructions[pc].copy());
+		this.setStepInstructionCycle(cycle);
+	}
+	else
+		this.setStepInstruction(undefined);
 	
 	var btbResult;
 	let fetchI = this.getStepInstruction();
