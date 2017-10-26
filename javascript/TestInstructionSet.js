@@ -1,15 +1,3 @@
-function getValue(elem) //verifica se o elemento eh um, objeto ou outra coisa
-{
-    if (elem !== null && typeof elem === 'object')
-    {
-        return elem.get();
-    }
-    else
-    {
-        return elem;
-    }
-}
-
 var TestInstructionSet = new InstructionSet();
 TestInstructionSet.ADD = function (dest, source)
 {
@@ -25,21 +13,21 @@ TestInstructionSet.LOAD = function (dest, address)
     return new Instruction("LOAD", DATA_TYPES.DATA_TRANSFER, null, {address: address, dest : dest}, true, function(memory) 
     {
         let value = memory.get(address);
-        dest.set(value);
+        this.params.dest.set(value);
     });
 };
 TestInstructionSet.LOADI = function(dest, value) 
 {
     return new Instruction("LOADI", DATA_TYPES.DATA_TRANSFER, null, {dest: dest, value: value}, true, function() 
     {
-        dest.set(value);
+        this.params.dest.set(value);
     });
 }
 TestInstructionSet.STORE = function(source, address)
 {
     return new Instruction("SAVE", DATA_TYPES.DATA_TRANSFER, null, {address: address, source: source}, true, function(memory)
     {
-        let value = getValue(source);
+        let value = getValue(this.params.source);
         memory.set(address, value);
     });
 }
@@ -55,7 +43,7 @@ TestInstructionSet.BRANCH_IF_ZERO = function (source, dest)
 {
     return new Instruction("BRANCH IF ZERO", DATA_TYPES.CONTROL, null, { source: source, branchTo: dest }, true, function()
     {
-        if(this.params.source.get() === 0 )
+        if(getValue(this.params.source) === 0 )
         { 
             this.params.branchResult = true;
         } 

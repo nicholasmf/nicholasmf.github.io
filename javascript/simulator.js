@@ -20,18 +20,27 @@ function Register(name, index) {
     this.set = function(value, noAnimation) {
         register.value = value;
 
-        if (register.name && register.name.indexOf("temp") !== -1) { return; }
+        var containerName, registerName;
+        if (register.name && register.name.indexOf("temp") !== -1) { 
+            containerName = "tempRegistersContainer";
+            registerName = register.pointedName;
+        }
+        else { 
+            containerName = "registersContainer";
+            registerName = register.name;
+        }
         /****** Update render *****/
-        const container = $("#registersContainer .row");
+        const container = $(`#${containerName} .row`);
         let elem = container.children().eq(register.index);
         $(elem).find('.panel-body').text(value);
+        $(elem).find('.panel-heading').text(registerName);
 
         if (noAnimation) { return; }
         let panel = elem.children()[0];
         $(panel).removeClass('panel-default');
         $(panel).addClass('panel-info');
 
-        $("#registersContainer").animate({
+        $(`#${containerName}`).animate({
             scrollTop: (113 * Math.floor(register.index / 12))
         }, 200);
 
@@ -72,7 +81,7 @@ function DataMemory(size) {
         let col = table.find('td').eq(address);
         col.text(value);
 
-        if (!noAnimation) { return; }
+        if (noAnimation) { return; }
         table.animate({
             scrollTop: 0
         }, 200);
@@ -144,6 +153,11 @@ function Simulator() {
 
     //     this.renderRegistersBank();
     // }
+
+    window.onload = function() {
+        sim.renderRegistersBank();
+        sim.DataMemory.render();
+    };
 
     /******************** Clear lists, pipeline and memory *****************/
     this.clear = function() {
@@ -217,8 +231,6 @@ function Simulator() {
         });
         if (sim.branchPredictor) 
 			sim.branchPredictor.render ($("#cacheContainer"));
-        sim.renderRegistersBank();
-        sim.DataMemory.render();        
         
         // Execute
 //       console.log(sim.architecture.name);
@@ -240,6 +252,9 @@ function Simulator() {
         const container = $("#registersContainer");
         const row = $("<div class='row'></div>");
         const col = $("<div class='col-xs-1'></div>");
+        const tempContainer = $("#tempRegistersContainer");
+        const tempRow = $("<div class='row'></div>");
+        const tempCol = $("<div class='col-xs-1'></div>");
     
         container.empty();
 
@@ -252,5 +267,16 @@ function Simulator() {
             row.append(newCol);
         }
         container.append(row);
+
+        tempContainer.empty();
+        for (let i = 0; i < sim.tempRegisters; i++) {
+            let register = sim.tempRegistersArray[i];
+            let newCol = col.clone();
+            let name = register.pointedName ? ("$" + register.pointedName) : i;
+            let panel = $(`<div class='panel panel-default'><div class='panel-heading'>${name}</div><div class='panel-body'>${register.get()}</div></div>`)
+            newCol.append(panel);
+            tempRow.append(newCol);
+        }
+        tempContainer.append(tempRow);
     }
 }

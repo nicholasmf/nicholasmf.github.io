@@ -15,7 +15,7 @@ finais de cada pipe. Todas as interações das etapas devem ser programadas caso
       - render (container) - Deve receber o elemento HTML onde o preditor será mostrado (case se deseje uma representação gráfica do mesmo) - Chama o render da cache
 1. Caso queira adicionar um novo tratamento de dependências, adicionar um novo arquivo na pasta /javascript/dependency-handler, adicionar a respectiva tag `<script>` e adicionar uma nova opção no `<select>` de id "selectDH"
    - O tratamento de dependências deve possuir os seguintes métodos públicos:
-      - insert (instruction) - Deve receber a instrução a ser decodificada
+      - insert (instruction) - Deve receber a instrução a ser decodificada - Deve retornar se foi possível realizar a inserção
       - wb (instruction) - Deve receber a instrução que está realizando a escrita nos registradores
       - getExecutables() - Deve retornar as instruções executáveis
 1. Funções auxiliares estão definidas em /javascript/aux-functions

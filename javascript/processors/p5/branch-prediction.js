@@ -33,7 +33,8 @@ function BTB() {
             }
         }
         else {
-            this.cache.insert(address, target, taken ? 3 : 0);
+			if(taken)
+				this.cache.insert(address, target, taken ? 3 : 0);
         }
     }
 

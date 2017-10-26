@@ -4,15 +4,10 @@ function StallHandler() {
 
     this.insert = function(instruction) {
         array.push({ instruction: instruction, status: 0 });
+        return true;
     }
-    this.wb = function(instruction) {
-        let i = array.find(item => {return item.instruction === instruction && item.status === 1});
-        let index = array.indexOf(i);
-        if (index > -1 )
-            array.splice(index, 1);
-    }
-    // Return array of executable instructions
-    this.getExecutables = function() {
+    // Return array of up to n executable instructions
+    this.getExecutables = function(n) {
         if (!array.length) { return [null];}
         if (array.length === 1 && array[0].status === 0) {
             array[0].status = 1;
@@ -27,6 +22,20 @@ function StallHandler() {
             first.status = 1;
             return [first.instruction];
         }
+    }
+    this.wb = function(instruction) {
+        let i = array.find(item => {return item.instruction === instruction && item.status === 1});
+        let index = array.indexOf(i);
+        if (index > -1 )
+            array.splice(index, 1);
+        return true;
+    }
+    this.remove = function(instruction) {
+        let i = array.find(item => {return item.instruction === instruction && item.status === 1});
+        let index = array.indexOf(i);
+        if (index > -1 )
+            array.splice(index, 1);
+        return true;        
     }
 }
 

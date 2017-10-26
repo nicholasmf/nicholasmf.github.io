@@ -18,6 +18,7 @@ function Instruction (name, type, MicroInstruction, params, executableInV, execu
     this.executethis = executethis;
     this.latency = 1;
     this.executedCycles = 0;
+	this.executeMe = true;
 
     if(type === DATA_TYPES.CONTROL)
     {//se a instrucao for do tipo controle, ela tera um metodo especial que retorna o endereco de destino

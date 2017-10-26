@@ -36,6 +36,7 @@
         <!-- OoO -->
         <script type="text/javascript" src="./javascript/dependency-handler/tomasulo.js"></script>
         <script type="text/javascript" src="./javascript/dependency-handler/ignore.js"></script>
+        <script type="text/javascript" src="./javascript/dependency-handler/scoreboarding.js"></script>
 		
 		<!-- Pipeline Steps -->
 		<script type="text/javascript" src="./javascript/pipeline-steps/base.js"></script>
@@ -96,7 +97,7 @@
                     <option value="">-- Dependências --</option>
                     <option value="ignore" selected>Ignorar</option>
                     <option value="stall">Esperar dependência</option>
-                    <option value="OoO" disabled>Execução fora de ordem</option>
+                    <option value="OoO">Execução fora de ordem</option>
                     <option value="OoOrenaming">Execução fora de ordem com renomeamento</option>
                 </select>
 
@@ -108,9 +109,9 @@
                 </select>
 
                 <select class="form-control mr-sm-2" id="selectCode" onchange="setCode()">
-                    <option value="">-- Codigo de programa</option>
-                    <option value="code1" selected>Programa 1</option>
-                    <option value="code2">Programa 2</option>
+                    <option value="">-- Codigo de programa --</option>
+                    <option value="code1">Desvio</option>
+                    <option value="code2">Dados</option>
                 </select>
 
                 <input class="btn btn-primary my-sm-2" type="button" value="Start" onclick="start()"/>
@@ -163,6 +164,8 @@
                 <div class="col-md-5">
                     <h2>Registers Bank</h2>
                     <div id="registersContainer"></div>
+                    <hr/>
+                    <div id="tempRegistersContainer"></div>
                 </div>
                 <div class="col-md-3">
                     <h2>BTB Cache</h2>

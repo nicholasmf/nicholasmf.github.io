@@ -266,7 +266,7 @@ function P5Pipe(htmlClass) {
                 containerPipeline.append(instructionElem);
             }, 60);//talvez nao precise de delay
 
-            return instructions[pc];//retorna a instrucao na posicao pc
+            return instructions[pc].copy();//retorna a instrucao na posicao pc
         }
         else { 
             return null;

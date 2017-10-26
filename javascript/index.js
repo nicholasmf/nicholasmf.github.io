@@ -18,6 +18,7 @@ function start() {
     setPipe();
     setTimeInterval();
     setBP();
+    setDH();
     if(code)
 	{
 		code.map(function(item, i) {
@@ -117,14 +118,14 @@ function setPipe() {
     var val = $("#selectPipe").val();
     if (val === "dummy") pipe = new DummyPipe();
     if (val === "netburst") pipe = new NetburstPipe();
-    if (val === "p5") pipe = new P5Arq();
+    if (val === "p5") pipe = new P5Pipe();
 }
 
 function setDH() {
     var val = $("#selectDH").val();
     if (val === "ignore");
     if (val === "stall") { simulator.setDependencyHandler(new StallHandler()); }
-    if (val === "OoO");
+    if (val === "OoO") { simulator.setDependencyHandler(new Scoreboard()); }
     if (val === "OoOrenaming") {
         var arf = new ARF();
         var rshandler = new RSHandler(256);
@@ -160,7 +161,9 @@ function setCode() {
             iSet.STORE(5, 5),
             iSet.LOAD(T0, 3),
             iSet.LOAD(T1, 5),
+            iSet.MUL(T0, 4, 5),
             iSet.ADD(T2, T0, T1),
+            iSet.ADD(T3, 0, 6),
             iSet.ADD(T0, T0, 2),
             iSet.ADD(T0, 6, 1)
         ];
@@ -195,7 +198,7 @@ code = [
             iSet.LOADI(T1, -1),
             iSet.DUMMY(),
             iSet.ADD(T1, 1),
-            iSet.DUMMY(),            
+            iSet.DUMMY(),
             iSet.BRANCH_IF_ZERO(T1, 11),
             iSet.BRANCH_IF_ZERO(T0, 6),
             iSet.LOADI(T0, 1),

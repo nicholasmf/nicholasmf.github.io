@@ -11,6 +11,8 @@ function ARF() {
     this.update = function(register) {
         let i = register.index;
         let tempI = tempArray[tempArrayPos++];
+        tempI.pointedName = register.name;
+        tempI.set(register.get());
         if (tempArrayPos === tempArraySize) tempArrayPos = 0;
         memory[i] = tempI;
         return tempI;
@@ -29,6 +31,7 @@ function ARF() {
             if (item === register) index = i; 
         });
         if (index > -1) {
+            memory[index].pointedName = undefined;
             memory[index] = undefined;
             return regArray[index];
         }
@@ -96,8 +99,13 @@ function RS(ins, vj, vk, qj, qk, a) {
             return A !== undefined;
         }
         if (instruction.type === DATA_TYPES.ARITHMETIC) {
-            return Vj !== undefined && Vk !== undefined;
+            return Vj !== undefined && (Vk !== undefined || Qk === undefined);
         }
+        if (instruction.type === DATA_TYPES.CONTROL) {
+            // console.log(instruction.name, Vj);
+            return Vj !== undefined;
+        }
+        return true;
     }
 
      // Update fields if register is on dependences
@@ -125,7 +133,6 @@ function RSHandler(size) {
     const stations = this;
     var size = size;
     var array = [];
-    var pos = 0;
     var arf = new ARF();
 
     // Insert a instruction on reservation stations
@@ -136,19 +143,32 @@ function RSHandler(size) {
             let source = isObject(instruction.params.source) ? instruction.params.source : undefined;
             let source1 = isObject(instruction.params.source1) ? instruction.params.source1 : undefined;
             let source2 = isObject(instruction.params.source2) ? instruction.params.source2 : undefined;
-            let s1 = (source || source1);
+            let s1 = source || source1;
             
-            let s1val = (isObject(instruction.params.source) ? instruction.params.source.get() : instruction.params.source) ||
-                        (isObject(instruction.params.source1) ? instruction.params.source1.get() : instruction.params.source1);
+            let s0val = getValue(instruction.params.source);
+            let s1val = getValue(instruction.params.source1);
 
-            let s2val = isObject(instruction.params.source2) ? instruction.params.source2.get() : instruction.params.source2;
+            s1val =  isNumber(s0val) ? s0val : s1val;
 
-            array[pos++] = new RS(instruction,  s1 ? undefined : s1val, source2 ? undefined : s2val, s1, source2);
+            let s2val = getValue(instruction.params.source2);
+
+            array.push(new RS(instruction,  s1 ? undefined : s1val, source2 ? undefined : s2val, s1, source2));
         }
         else if (instruction.type === DATA_TYPES.DATA_TRANSFER) {
             let a = instruction.params.address || instruction.params.value;
-            array[pos++] = new  RS(instruction, undefined, undefined, undefined, undefined, a);
+            array.push(new RS(instruction, undefined, undefined, undefined, undefined, a));
         }
+        else if (instruction.type === DATA_TYPES.CONTROL) {
+            let source = isObject(instruction.params.source) ? instruction.params.source : undefined;
+            sourceVal = getValue(instruction.params.source);
+            console.log(source, sourceVal);
+            array.push(new RS(instruction, source ? undefined : sourceVal, undefined, source, undefined));
+        }
+        else {
+            array.push(new RS(instruction));
+        }
+
+        return true;
     }
 
     // Update
@@ -165,8 +185,11 @@ function RSHandler(size) {
         });
     }
 
-    // Get all instructions available for execution
-    this.getExecutables = function() {
+    // Get up to n instructions available for execution
+    this.getExecutables = function(n) {
+        let count = 0;
+        if (!array.length) { return [null]; }
+        if (!array.find(item => { return item.getInstruction().executedCycles === 0; })) { return [null]; }
         return array.filter(rs => {
             return rs.isExecutable();
         }).map(rs => { return rs.getInstruction(); });
@@ -182,6 +205,19 @@ function RSHandler(size) {
             let originalRegister = arf.remove(dest);
             if (originalRegister) originalRegister.set(dest.get());
         }
+        return true;
+    }
+
+    this.remove = function(instruction) {
+        let rs = stations.getRS(instruction);
+        if (!rs) return;
+        let rsIndex = array.indexOf(rs);
+        array.splice(rsIndex, 1);
+        let dest = instruction.params.dest;
+        if (isObject(dest)) {
+            let originalRegister = arf.remove(dest);
+        }
+        return true;        
     }
 }
 
@@ -194,7 +230,9 @@ function rename(instruction, arf) {
     let source2 = isObject(instruction.params.source2) ? instruction.params.source2 : undefined;
     
     if (source) {
-        instruction.params.source = arf.get(source);
+        let temp = arf.get(source);
+        console.log(source, source.get(), temp || source.get());
+        instruction.params.source = temp || source.get();
     }
     if (source1) {
         var temp = arf.get(source1);

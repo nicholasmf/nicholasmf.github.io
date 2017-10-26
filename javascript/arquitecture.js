@@ -30,7 +30,7 @@ function P5Arq ()
 		vPipe.init(dataMemory);
     }
 	
-	this.p5Arq = function(instructions, execution){
+	this.pipeLoop = function(instructions, execution, branchPredictor){
 		console.log("////////////////////////////////////////////////////////////////////////////////////////////////////////////");
 		console.log("ini pc: " + simArq.pc + " ini pcu: " + pcu + " ini pcv: " + pcv);
 		
@@ -39,8 +39,8 @@ function P5Arq ()
 		
 		//embora os pipes U e V so comecem de fato na terceira etapa, a logica do programa divide as duas primeiras em dois tb
 		//O processador tem fetch e decode 1 em paralelo
-		var uPipeCycle = uPipe.p5cycle(simArq.BTB, instructions, pcu, execution, simArq.fillNoop, substituteInstructionU, simArq.uPipeDo, inBuffer, cycle, "Upipe: ");
-		var vPipeCycle = vPipe.p5cycle(simArq.BTB, instructions, pcv, execution, simArq.fillNoop, substituteInstructionV, simArq.vPipeDo, inBuffer, cycle, "Vpipe: ");
+		var uPipeCycle = uPipe.p5cycle(branchPredictor, instructions, pcu, execution, simArq.fillNoop, substituteInstructionU, simArq.uPipeDo, inBuffer, cycle, "Upipe: ");
+		var vPipeCycle = vPipe.p5cycle(branchPredictor, instructions, pcv, execution, simArq.fillNoop, substituteInstructionV, simArq.vPipeDo, inBuffer, cycle, "Vpipe: ");
 		substituteInstructionU.Instruction = null;
 		substituteInstructionU.Place = null;
 		substituteInstructionV.Instruction = null;

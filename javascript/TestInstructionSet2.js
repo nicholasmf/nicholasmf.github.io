@@ -10,6 +10,14 @@ Test2InstructionSet.ADD = function (dest, source1, source2)
 
     }); 
 };
+Test2InstructionSet.MUL = function (dest, source1, source2) {
+    return new Instruction("MUL", DATA_TYPES.ARITHMETIC, null, { dest: dest, source1: source1, source2, source2}, true, function() {
+        var source1Val = getValue(this.params.source1);//chamar getvalue para fazer uma operacao aritmetica com 2 numeros
+        var source2Val = getValue(this.params.source2);
+        return source1Val * source2Val;       
+    })
+}
+Test2InstructionSet.MUL.latency = 1;
 Test2InstructionSet.LOAD = function (dest, address) 
 { 
     return new Instruction("LOAD", DATA_TYPES.DATA_TRANSFER, null, {address: address, dest : dest}, true, function(memory) 
