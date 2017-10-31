@@ -62,5 +62,7 @@ TestInstructionSet.BRANCH_IF_ZERO = function (source, dest)
 //     return new Instruction("SET", null, null, { source: value, dest: register }, true); 
 // };
 TestInstructionSet.DUMMY = function() {
-    return new Instruction("DUMMY");
+    let ins = new Instruction("DUMMY");
+    ins.executableInV = true;
+    return ins;
 }

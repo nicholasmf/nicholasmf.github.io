@@ -33,9 +33,11 @@ function Scoreboard(registersCount) {
 
     this.insert = function(instruction) {
         if (!instruction.params) { return true; }
+        let found = scoreboard.find(item => { return item.instruction === instruction; });
+        if (found) { return false; }        
         let dest = isObject(instruction.params.dest) ? instruction.params.dest : undefined;
         let index = dest ? dest.index : undefined;
-        if (isNumber(index) && waitingWrite[index]) { console.log('waiting'); return false; }
+        if (isNumber(index) && waitingWrite[index]) { return false; }
         else {
             let wsIndex0 = isObject(instruction.params.source) ? instruction.params.source.index : undefined;
             let wsIndex1 = isObject(instruction.params.source1) ? instruction.params.source1.index1 : undefined;
@@ -47,7 +49,6 @@ function Scoreboard(registersCount) {
             
             let waitSource2 = isObject(instruction.params.source2) ? waitingWrite[instruction.params.source2.index] : undefined;
             let newUnit = new ScoreboardUnit(instruction, ws1, waitSource2);
-            console.log('insert', newUnit.instruction);
             scoreboard.push(newUnit);
             if (isNumber(index)) {
                 waitingWrite[index] = { ready: true };
@@ -68,6 +69,9 @@ function Scoreboard(registersCount) {
             return false;
         }).map(item => { return item.instruction; });
     }
+    this.execute = function(instruction) {
+
+    }
     this.wb = function(instruction) {
         if (!instruction.params) { return true; }
         let dest = instruction.params.dest;
@@ -87,7 +91,6 @@ function Scoreboard(registersCount) {
         }
         if (thisIndex > -1) {
             let removedItem  = scoreboard.splice(thisIndex, 1);
-            console.log('wb',removedItem[0].instruction);
         }
 
         if (isNumber(index)) {
@@ -110,7 +113,6 @@ function Scoreboard(registersCount) {
 
         if (thisIndex > -1) {
             let removedItem = scoreboard.splice(thisIndex, 1);
-            console.log('remove', removedItem[0].instruction);
         }
 
         if (isNumber(index)) {

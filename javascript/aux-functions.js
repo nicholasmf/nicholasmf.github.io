@@ -21,6 +21,32 @@ function getValue(elem)
     }
 }
 
+// Return instruciton operands
+/**
+ * 
+ * @param instruction
+ * Returns an object with:
+ * - name: name of the operand (dest, source1, address...)
+ * - value: register or integer
+ * - isRegister: boolean, true if operand is a register
+ * - registerName: string with the name of the register, if operand is register
+ */
+function getOperands(instruction) {
+    let retArr = [];
+    if (!instruction || !instruction.params) { return []; }
+    for (let property in instruction.params) {
+        let value = instruction.params[property];
+        let obj = {
+            name: property,
+            value: value,
+            isRegister: isObject(value),
+            registerName: isObject(value) ? value.name : undefined
+        };
+        retArr.push(obj);
+    }
+    return retArr;
+}
+
 // Returns if two instructions are true dependent (RaW)
 function checkRaW(i1, i2) {
     if (!i1.params || !i2.params) { return false; }    

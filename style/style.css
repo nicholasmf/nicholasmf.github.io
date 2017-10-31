@@ -34,7 +34,7 @@
 }
 
 .pipeline-item { /*eh o quadradinho, caracteristicas do formato, sombra (td menos cor e posicao; animacao... vai td aqui) */
-    top: 52px;
+    top: 20px;
     width: 42px;
     height: 42px;
     border-radius: 5px;
@@ -62,6 +62,11 @@
 .pipeline {
     height: 100px;
 	width: 100%;
+    position: absolute;
+}
+.pipeline.p6 {
+	height: 212px;
+	width: 99%;
     position: absolute;
 }
 
@@ -101,6 +106,11 @@
 .pipeline-item.out {
     left: 100%;
     opacity: 0;
+}
+
+.pipeline-item.waiting {
+    left: 80%;
+    top: 80px;
 }
 
 #finalList li {
@@ -182,4 +192,279 @@
     padding-left: 0;
     padding-right: 0;
     text-align: center;
+}
+
+/* fetch buffer draw */
+.upipe .buffer-0.fetch {
+    top: 35px;
+}
+.upipe .buffer-1.fetch {
+    top: -10px;
+}
+
+.vpipe .buffer-0.fetch {
+    top: 45px;
+}
+.vpipe .buffer-1.fetch {
+    top: 0;
+}
+
+/*creates 4 separators for pipes with 5 stages */ 
+.fiveStepSeparator {
+    border-left: 5px dotted #3333333b;
+    border-right: 5px dotted #3333333b;
+    position: absolute;
+    width: 20%;
+    height: 90%;
+    top: -8%;
+    z-index: -1;
+}
+.fiveStepLeft {
+    left: 22%;
+}
+.fiveStepRight {
+    left: 62%;
+}
+/*end of creates 4 separators for pipes with 5 stages */
+
+/*sets height for the 4 p5 fetch buffers*/
+#upipeId .p5Buffer-0 {
+    top: 36%;
+}
+#upipeId .p5Buffer-1 {
+    top: -9%;
+}
+#vpipeId .p5Buffer-0 {
+    top: 46%;
+}
+#vpipeId .p5Buffer-1 {
+    top: 1%;
+}
+/*end of sets height for the 4 p5 fetch buffers*/
+
+/*sets height of the final 4 stages of each pipe in p5*/
+.upipeHeight {
+    top: 21%;
+}
+.vpipeHeight {
+    top: 21%;
+}
+/*end of sets height of the final 4 stages of each pipe in p5*/
+
+/*set horizontal offset for step location blocks for 5 stage pipes */
+.fiveStepFetchGhost {
+    left: 10%;
+}
+.fiveStepDecodeGhost {
+    left: 30%;
+}
+.fiveStepLoadGhost {
+    left: 50%;
+}
+.fiveStepExecuteGhost {
+	left: 70%;
+}
+.fiveStepStoreGhost {
+	left: 90%;
+}
+/*end of set horizontal offset for step location blocks for 5 stage pipes */
+
+/*all stepContainers for all pipes are created equal */
+.fiveStepContainer {
+	border: 1px dashed #3333333b;
+    width: 42px;
+    height: 42px;
+    position: absolute;
+	z-index: -1;
+}
+/*end of all stepContainers for all pipes are created equal */
+
+.fiveStepText {
+	z-index: -2;
+	position: absolute;
+	opacity: 0.15;
+	color: black;
+	font-size: 42px;
+}
+.p5decode1 {
+    left: 24%;
+	top: 0;
+}
+.p5decode2{
+	left: 44%;
+	top: 0;
+}
+.p5execute{
+	left: 65%;
+	top: 0;
+}
+.p5store{
+	left: 89%;
+	top: 0;
+}
+.p5fetch{
+	left: 9%;
+	top: 0;
+}
+
+.dummyHeight {
+    top: 21%;
+}
+
+.dummyDecode {
+    left: 26%;
+}
+.dummyLoad{
+	left: 70%;
+}
+.DummyExecute{
+	left: 46%;
+}
+.DummyStore{
+	left: 89%;
+}
+.DummyFetch{
+	left: 9%;
+}
+
+.decodePredict {
+	position: absolute;
+	left: 29%;
+	top: -15%
+}
+.dummyExecuteBranch {
+	position: absolute;
+	left: 50%;
+	top: -15%
+}
+
+.positivePredict {
+	color: orange;
+}
+.rightBranch {
+	color: green;
+}
+.wrongBranch {
+	color: red;
+}
+/*creates 5 separators for pipes with 6 stages */ 
+.sixStepSeparator {
+    border-left: 5px dotted #3333333b;
+    position: absolute;
+    height: 90%;
+    top: 0%;
+    z-index: -1;
+}
+.sixStepLeft {
+    left: 23%;
+	width: 18%;
+	border-right: 5px dotted #3333333b;
+}
+.sixStepRight{
+    left: 78%;
+    width: 9%;
+	border-right: 5px dotted #3333333b;
+}
+.sixStepMid {
+	left: 65%;
+}
+/*end of creates 5 separators for pipes with 6 stages */
+.p6StepContainer {
+	border: 1px dashed #3333333b;
+    width: 42px;
+    height: 42px;
+    position: absolute;
+	z-index: -1;
+}
+.p6row0Height {
+	 top: 76%;
+}
+.p6row1Height {
+	 top: 38%;
+}
+.p6row2Height {
+	 top: 0%;
+}
+.p6StepDecodeGhost{
+	left: 30%;
+} 
+.p6StepLoadGhost {
+	left: 50%;
+}
+.p6StepExecuteGhost {
+	left: 70%;
+}
+.p6StepStoreGhost {
+	left: 90%;
+}
+.p6StepFetchGhost {
+	left: 10%;
+}
+
+.p6StepName{
+	z-index: -2;
+	position: absolute;
+	opacity: 0.15;
+	color: black;
+	font-size: 42px;
+}
+.p6Fetch {
+    left: 7%;
+	top: 34%;
+}
+.p6Decode {
+    left: 24%;
+    top: 34%;
+    font-size: 38px;
+}
+.p6Issue {
+    left: 47%;
+    top: 33%;
+}
+.p6Execution {
+    left: 66%;
+    top: 40%;
+    font-size: 22px;
+}
+.p6Buffer {
+    left: 79%;
+    top: 40%;
+    font-size: 22px;
+}
+.p6Retire {
+    left: 88%;
+    top: 38%;
+    font-size: 30px;
+}
+
+.p6decodePredict-0 {
+	position: absolute;
+	left: 29%;
+	top: -11%
+}
+.p6decodePredict-1 {
+    position: absolute;
+    left: 29%;
+    top: 27%;
+}
+.p6decodePredict-2 {
+    position: absolute;
+    left: 29%;
+    top: 64%;
+}
+
+.p6ExecuteBranch-0 {/*x coordinate is the same*/
+	position: absolute;
+    left: 67%;
+    top: -11%
+}
+.p6ExecuteBranch-1 {/*x coordinate is the same*/
+	position: absolute;
+    left: 67%;
+    top: 27%;
+}
+.p6ExecuteBranch-2 {/*x coordinate is the same*/
+	position: absolute;
+    left: 67%;
+    top: 64%;
 }

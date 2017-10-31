@@ -37,13 +37,16 @@
         <script type="text/javascript" src="./javascript/dependency-handler/tomasulo.js"></script>
         <script type="text/javascript" src="./javascript/dependency-handler/ignore.js"></script>
         <script type="text/javascript" src="./javascript/dependency-handler/scoreboarding.js"></script>
+        <script type="text/javascript" src="./javascript/processors/p6/reorder-buffer.js"></script>
 		
 		<!-- Pipeline Steps -->
-		<script type="text/javascript" src="./javascript/pipeline-steps/base.js"></script>
+        <script type="text/javascript" src="./javascript/pipeline-steps/base.js"></script>
+        <script type="text/javascript" src="./javascript/pipeline-steps/p6base.js"></script>
 		
         <!-- Pipelines -->
         <script type="text/javascript" src="./javascript/processors/p1/pipeline.js"></script>
-		<script type="text/javascript" src="./javascript/processors/dummy/pipeline.js"></script>
+        <script type="text/javascript" src="./javascript/processors/dummy/pipeline.js"></script>
+        <script type="text/javascript" src="./javascript/processors/p6/p6pipe.js"></script>
 
         <!-- Branch Predictors -->
         <script type="text/javascript" src="./javascript/processors/p1/branch-prediction.js"></script>
@@ -83,14 +86,14 @@
                 <select class="form-control mr-sm-2" id="selectBP" onchange="setBP()">
                     <option value="">-- Preditor de desvio --</option>
                     <option value="btb">P5 BTB</option>
-                    <option value="apbtb">Predição adaptativa</option>
+                    <option value="apbtb" selected>Predição adaptativa</option>
                 </select>
 
-                <select class="form-control mr-sm-2" id="selectPipe" onchange="setPipe()">
+                <select class="form-control mr-sm-2" id="selectPipe" <!--onchange="setPipe()"-->>
                     <option value="">-- Pipeline --</option>
-                    <option value="dummy" selected>Simples</option>
-                    <option value="netburst" disabled>NetBurst</option>
-                    <option value="p5" disabled>P5</option>
+                    <option value="dummy">Simples</option>
+                    <option value="p5">P5</option>
+                    <option value="p6" selected>P6</option>
                 </select>
 
                 <select class="form-control mr-sm-2" id="selectDH" onchange="setDH()">
@@ -98,7 +101,7 @@
                     <option value="ignore" selected>Ignorar</option>
                     <option value="stall">Esperar dependência</option>
                     <option value="OoO">Execução fora de ordem</option>
-                    <option value="OoOrenaming">Execução fora de ordem com renomeamento</option>
+                    <option value="OoOrenaming" selected>Execução fora de ordem com renomeamento</option>
                 </select>
 
                 <select class="form-control mr-sm-2" id="selectTimeInterval" onchange="setTimeInterval()">
@@ -110,7 +113,7 @@
 
                 <select class="form-control mr-sm-2" id="selectCode" onchange="setCode()">
                     <option value="">-- Codigo de programa --</option>
-                    <option value="code1">Desvio</option>
+                    <option value="code1" selected>Desvio</option>
                     <option value="code2">Dados</option>
                 </select>
 
@@ -123,7 +126,7 @@
             </form>
         </nav>
         <div class="container-fluid">
-            <div class="row">
+            <div id="initialRow" class="row">
                 <div class="col-md-2">
                     <h3>Instruções</h3>
                     <ul class="list-group" id="instructions"></ul>

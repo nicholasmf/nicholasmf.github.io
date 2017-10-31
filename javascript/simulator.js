@@ -18,7 +18,7 @@ function Register(name, index) {
         return register.value;
     }
     this.set = function(value, noAnimation) {
-        register.value = value;
+        if (isNumber(value)) register.value = value;
 
         var containerName, registerName;
         if (register.name && register.name.indexOf("temp") !== -1) { 
@@ -32,7 +32,7 @@ function Register(name, index) {
         /****** Update render *****/
         const container = $(`#${containerName} .row`);
         let elem = container.children().eq(register.index);
-        $(elem).find('.panel-body').text(value);
+        $(elem).find('.panel-body').text(register.value);
         $(elem).find('.panel-heading').text(registerName);
 
         if (noAnimation) { return; }
@@ -223,9 +223,27 @@ function Simulator() {
 		
         // Render
         var instructionsList = document.getElementById("instructions");
-        instructions.map((instruction) => {
+        instructions.map((instruction) => {//create visible instruction list
             var newItem = document.createElement('li');
-            newItem.textContent = instruction.name;
+			var instructionOperands = getOperands(instruction);
+			var instructionOperandsString = ' (';
+			for(let i=0; i<instructionOperands.length; i++)
+			{
+				if(instructionOperands[i].isRegister)
+				{
+					instructionOperandsString = instructionOperandsString + instructionOperands[i].value.name;
+				}
+				else
+				{
+					instructionOperandsString = instructionOperandsString + instructionOperands[i].value;
+				}
+				if(i != instructionOperands.length - 1)
+				{
+					instructionOperandsString = instructionOperandsString + ', ';
+				}
+			}
+			instructionOperandsString = instructionOperandsString + ')';
+            newItem.textContent = (instruction.address + '.' + instruction.name + instructionOperandsString);
             newItem.className = 'list-group-item';
             instructionsList.appendChild(newItem);
         });

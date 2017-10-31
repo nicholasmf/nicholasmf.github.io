@@ -1,87 +1,96 @@
-function fetchExecution(instructions, pc, cycle) {
-	if(instructions[pc])
-	{
-		this.setStepInstruction(instructions[pc].copy());
-		this.setStepInstructionCycle(cycle);
-		if(instructions[pc].type === DATA_TYPES.CONTROL)
-			this.setBranchAlreadyPredicted(false);//para verificar se ja previ o branch, e evita prever de novo se ocorrerem stalls
-	}
-	else
-		this.setStepInstruction(undefined);
-}
-
-function decodeExecution(dh, branchPredictor) {
-    let retArr = [];
-    let instruction = this.getStepInstruction();
-    if (instruction && dh) {
-        retArr[1] = dh.insert(instruction);
-    }
-    else {
-        retArr[1] = true;
-    }
-	var btbResult;	
-	
-	if(instruction && instruction.type === DATA_TYPES.CONTROL && !instruction.alreadyPredicted)//para verificar se ja previ o branch se ele ficar parado
-	{//preciso executar se eu tiver um preditor ativo e se a instrucao for de branch
-		branchPredictorResult = branchPredictor.predict(instruction.address);//branchPredictorResult recebe endereco de previsao se houver
-//		console.log("predictor result is: " + branchPredictorResult);
-        instruction.btbResult = branchPredictorResult !== undefined;
-		this.setBranchAlreadyPredicted(true);
-    }
-	else
-	{
-//		console.log("predictor result is: dont see branch");
-		branchPredictorResult = undefined;
-    }
-    retArr[0] = branchPredictorResult;
-	return retArr;
-}
-
-function loadExecution() {
-
-}
-
-function executeExecution(branchPredictor) {
-	
-    let instruction = this.getStepInstruction();
-    instruction.executedCycles++;
-	
-	if(instruction && instruction.type === DATA_TYPES.ARITHMETIC)
-	{
-		instruction.result = instruction.executethis();
-		//console.log("T0: ", instruction.params.dest);
-	}
-	
-	if (instruction && instruction.type === DATA_TYPES.CONTROL) {
-		if (instruction.name === "BRANCH IF ZERO") {
-			instruction.executethis();
-			branchPredictor.update(instruction.address, instruction.params.branchTo, instruction.params.branchResult);
-		}
-    }
-}
-
-function storeExecution(dataMemory, dh) {
-	
-	let instruction = this.getStepInstruction();
-	
-	if(instruction && instruction.result != undefined && instruction.type === DATA_TYPES.ARITHMETIC)
-	{
-		instruction.params.dest.set(instruction.result);
-	}
-	// Load and Store
-	if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
-	{
-		instruction.executethis(dataMemory);
-    }
-    if (instruction && dh) {
-        dh.wb(instruction);
-    }
-}
-
 function DummyPipe() {
 	
 	const SimplePipe = this;
+
 	
+	function fetchExecution(instructions, pc, cycle) {
+		if(instructions[pc])
+		{
+			var newInst = instructions[pc].copy();
+			newInst.entryOrder = cycle;
+			this.setStepInstruction(newInst);
+			this.setStepInstructionCycle(cycle);
+			if(instructions[pc].type === DATA_TYPES.CONTROL)
+			{
+				this.setBranchAlreadyPredicted(false);//para verificar se ja previ o branch, e evita prever de novo se ocorrerem stalls
+				newInst.renderAlreadyPredicted = false;
+				newInst.renderAlreadyBranched = false;
+			}
+		}
+		else
+			this.setStepInstruction(undefined);
+	}
+	
+	function decodeExecution(branchPredictor, dh) {
+		let retArr = [];
+		let instruction = this.getStepInstruction();
+		if (instruction && dh) {
+			retArr[1] = dh.insert(instruction);
+		}
+		else {
+			retArr[1] = true;
+		}
+		var btbResult;	
+		
+		if(instruction && instruction.type === DATA_TYPES.CONTROL && !instruction.alreadyPredicted)//para verificar se ja previ o branch se ele ficar parado
+		{//preciso executar se eu tiver um preditor ativo e se a instrucao for de branch
+			branchPredictorResult = branchPredictor.predict(instruction.address);//branchPredictorResult recebe endereco de previsao se houver
+	//		console.log("predictor result is: " + branchPredictorResult);
+			instruction.btbResult = branchPredictorResult !== undefined;
+			this.setBranchAlreadyPredicted(true);
+		}
+		else
+		{
+	//		console.log("predictor result is: dont see branch");
+			branchPredictorResult = undefined;
+		}
+		retArr[0] = branchPredictorResult;
+		return retArr;
+	}
+	
+	function loadExecution() {
+	
+	}
+	
+	function executeExecution(branchPredictor, dh) {
+		
+		let instruction = this.getStepInstruction();
+		instruction.executedCycles++;
+		
+		if(instruction && instruction.type === DATA_TYPES.ARITHMETIC)
+		{
+			instruction.result = instruction.executethis();
+			//console.log("T0: ", instruction.params.dest);
+		}
+		
+		if (instruction && instruction.type === DATA_TYPES.CONTROL) {
+			if (instruction.name === "BRANCH IF ZERO") {
+				instruction.executethis();
+				branchPredictor.update(instruction.address, instruction.params.branchTo, instruction.params.branchResult);
+			}
+		}
+	}
+	
+	function storeExecution(dataMemory, dh) {
+		
+		let instruction = this.getStepInstruction();
+		
+		if(instruction && instruction.result != undefined && instruction.type === DATA_TYPES.ARITHMETIC)
+		{
+			instruction.params.dest.set(instruction.result);
+		}
+		// Load and Store
+		if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
+		{
+			instruction.executethis(dataMemory);
+		}
+		if (instruction && dh) {
+			dh.execute(instruction);
+			dh.wb(instruction);
+		}
+	}
+	
+
 	
     this.fetch = new PipelineStep("fetch", fetchExecution);
 	this.decode = new PipelineStep("decode", decodeExecution);
@@ -103,6 +112,61 @@ function DummyPipe() {
 	var containerPipeline = $('<div class="container pipeline dummy"></div>');
 	$("#pipelineDivGoesBeneath").append(containerPipeline);
 	
+	
+	var DummyNameArr = ['decode', 'load', 'execute', 'store', 'fetch'];
+	var textIdentifierArr = ['dummyDecode', 'dummyLoad', 'DummyExecute', 'DummyStore', 'DummyFetch'];
+	for(let i=0; i<5; i++)
+	{
+		$("#pipelineDivGoesBeneath").append('<div class="fiveStepText ' + textIdentifierArr[i] + '">'+ DummyNameArr[i] + '</div>');
+	}
+	
+	var stepNameArr = ['fiveStepDecodeGhost', 'fiveStepLoadGhost', 'fiveStepExecuteGhost', 'fiveStepStoreGhost', 'fiveStepFetchGhost'];
+	for(let j=0; j<5; j++)
+	{
+		$(containerPipeline).append('<div class="fiveStepContainer ' + stepNameArr[j] + ' dummyHeight"></div>');
+	}
+	
+	$(containerPipeline).append('<div class="fiveStepSeparator fiveStepLeft"></div>');
+	$(containerPipeline).append('<div class="fiveStepSeparator fiveStepRight"></div>');
+	
+	
+	this.renderPrediction = function(predictionAddr)
+	{
+		if(predictionAddr)
+		{//se houver um predictionAddr, houve uma previsao positiva
+			$('.container.pipeline.dummy').append("<div class='decodePredict positivePredict'>Jump to: " + predictionAddr +  "</div>");
+		}
+		else
+		{//se for undefined, ou previ falso ou houve um miss da cache, de qlqr modo, o pipe acha q nao havera jump
+			$('.container.pipeline.dummy').append("<div class='decodePredict'>No jump</div>");
+			//console.log(herro);
+		}
+		var fade_out = function() {
+			$(".decodePredict").fadeOut().remove();
+		}
+
+		setTimeout(fade_out, 940);
+	}
+	
+	this.renderBranch = function(instruction)
+	{
+		if(instruction && instruction.type === DATA_TYPES.CONTROL && instruction.executeMe)
+		{
+			if(instruction.btbResult === instruction.params.branchResult) ///acertei a predicao
+			{
+				$('.container.pipeline.dummy').append("<div class='rightBranch dummyExecuteBranch'>Correct</div>");
+			}
+			else
+			{
+				$('.container.pipeline.dummy').append("<div class='wrongBranch dummyExecuteBranch'>Misprediction</div>");
+			}
+			var fade_out = function() {
+				$(".dummyExecuteBranch").fadeOut().remove();
+			}
+			setTimeout(fade_out, 950);
+		}
+	}
+	
 	this.init = function(dataMemory) {
 		SimplePipe.dataMemory = dataMemory;
     }
@@ -114,11 +178,13 @@ function DummyPipe() {
         let dhRet = dependencyHandler ? dependencyHandler.getExecutables(1)[0] : null;
         let nextExecIns = dependencyHandler && decodeI ? ( dhRet === undefined ? new Instruction("NoOp") : dhRet === null ? decodeI : dhRet) : decodeI;
         if (decodeI && !decodeI.executeMe) { nextExecIns = decodeI; }
-        if (!dhResult) { nextExecIns = new Instruction("NoOp"); }
-        if (nextExecIns && nextExecIns.name === "NoOp") { nextExecIns.cycle = cycle; }
+        else if (!dhResult) { nextExecIns = new Instruction("NoOp"); }
+        if (nextExecIns && nextExecIns.name === "NoOp" && !nextExecIns.cycle) { nextExecIns.cycle = cycle; }
         let stallDecode = nextExecIns && nextExecIns.name === "NoOp" && decodeI;
         //console.log(fetchI, decodeI, executeI, loadI, storeI);
-        
+		
+		let out = this.store.getStepInstruction();
+		this.removeHTMLInstruction(out);		
         this.store.setStepInstruction( this.load.getStepInstruction() );
 		this.load.setStepInstruction( this.execute.getStepInstruction() );
 		this.execute.setStepInstruction( nextExecIns );
@@ -148,7 +214,7 @@ function DummyPipe() {
 			if(decodeI.executeMe)
 			{
 //                console.log("executing decode");
-                [predictionAddr, dhResult] = this.decode.execution(dependencyHandler, branchPredictor);
+                [predictionAddr, dhResult] = this.decode.execution(branchPredictor, dependencyHandler);
             }
 			this.decode.render("fetch", containerPipeline);
 		}
@@ -158,10 +224,10 @@ function DummyPipe() {
 
 			if(executeI.executeMe)
 			{
-				this.execute.execution(branchPredictor);
+				this.execute.execution(branchPredictor, dependencyHandler);
 //				console.log("executing execute");
 			}
-			if (!stallDecode) this.execute.render("decode", containerPipeline);
+			this.execute.render("decode", containerPipeline);
 		}
 		
 		
@@ -191,9 +257,7 @@ function DummyPipe() {
 			// }
 			this.store.render("load", containerPipeline);
 		}	
-		
-		this.removeHTMLInstruction(1200);
-		
+				
 		/////////////////// fim da execucao das etapas /////////////////////////////
 		
 		//  console.log(this.fetch.getStepInstruction());
@@ -239,6 +303,19 @@ function DummyPipe() {
 		}
 		
 		//////end of pipeline flushing control //////////////////////
+		
+		
+		if(decodeI && decodeI.type === DATA_TYPES.CONTROL && decodeI.executeMe && !decodeI.renderAlreadyPredicted)
+		{
+				SimplePipe.renderPrediction(predictionAddr);
+				decodeI.renderAlreadyPredicted = true;
+		}
+		if(executeI && executeI.type === DATA_TYPES.CONTROL && executeI.executeMe  && !executeI.renderAlreadyBranched)
+		{
+			SimplePipe.renderBranch(executeI);
+			executeI.renderAlreadyBranched = true;
+		}
+		
 //		console.log("flushControl: " + flushControl + " cycle: " + cycle + " stopFlushControl: " + stopFlushControl);
 		//////branch & sequential pc control //////////////////////
 		if(executeI && executeI.type === DATA_TYPES.CONTROL && executeI.executeMe/*(executeI.cycle === flushControl + 3 || flushControl === -5 || executeI.cycle === flushControl)*/ )
@@ -322,7 +399,25 @@ function DummyPipe() {
         var instruction = this.getStepInstruction();
         //console.log(instruction);
         if (!instruction) { return; }
-        var instructionElem = $(`<div class='pipeline-item background-info fetch ${instruction.cycle}-${instruction.address}'>${instruction.name}</div>`);
+		var instructionOperands = getOperands(instruction);
+		var instructionOperandsString = '(';
+		for(let i=0; i<instructionOperands.length; i++)
+		{
+			if(instructionOperands[i].isRegister)
+			{
+				instructionOperandsString = instructionOperandsString + instructionOperands[i].value.name;
+			}
+			else
+			{
+				instructionOperandsString = instructionOperandsString + instructionOperands[i].value;
+			}
+			if(i != instructionOperands.length - 1)
+			{
+				instructionOperandsString = instructionOperandsString + ', ';
+			}
+		}
+		instructionOperandsString = instruction.name + '<br>' +instructionOperandsString + ')';
+        var instructionElem = $(`<div class='pipeline-item background-info fetch ${instruction.cycle}-${instruction.address}'>${instructionOperandsString}</div>`);
                                 //<div class='formato cor posicao'></div>
         //var elem = instructionList.children(":eq(0)");
         //elem.addClass("out");
@@ -351,25 +446,21 @@ function DummyPipe() {
 		else {
 			elem = containerPipeline.children(`.${instruction.cycle}-${instruction.address}`);
 		}
-		setTimeout(function() {
-            elem.removeClass(prevStep);//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
-            elem.addClass(self.getStepName());//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"
-			if (!instruction.executeMe) {
-				elem.removeClass('background-info');
-				elem.addClass('background-disabled');
-			}
-            else if (elem.hasClass("background-info") /*&& !isFlushing*/) {//background info eh "azul"
-                elem.removeClass("background-info");//retira o azul do bloquinho e coloca verde
-                elem.addClass("background-success");//nota: essas cores estao no .css              
-            }
-        }, 80)
+		elem.removeClass(prevStep);//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
+		elem.addClass(self.getStepName());//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"
+		if (!instruction.executeMe) {
+			elem.removeClass('background-info');
+			elem.addClass('background-disabled');
+		}
+		else if (elem.hasClass("background-info") /*&& !isFlushing*/) {//background info eh "azul"
+			elem.removeClass("background-info");//retira o azul do bloquinho e coloca verde
+			elem.addClass("background-success");//nota: essas cores estao no .css              
+		}
     }
 
     // Remove First element on store step
-    this.removeHTMLInstruction = function(delay) {
-        let instruction = SimplePipe.store.getStepInstruction();
+    this.removeHTMLInstruction = function(instruction) {
 		if (!instruction) { return; }
-        //var count =  containerPipeline.children(`#${prevStep}`).length;
 		var elem;
 		if (instruction.name === "NoOp") {
 			elem = containerPipeline.children(`.noop-${instruction.cycle}`);
@@ -378,29 +469,28 @@ function DummyPipe() {
 			elem = containerPipeline.children(`.${instruction.cycle}-${instruction.address}`);
 		}
 
-        var instructionList = $("#finalList");
-        var instructionElem = $("<li class='list-group-item'>" + elem.text() + "</li>");
+		if (!elem ) { return; }
+		var instructionList = $("#finalList");
+		var instructionElem = $("<li class='list-group-item'>" + elem.text() + "</li>");
 
-        if (elem.hasClass("background-success")) {
-            instructionElem.addClass("list-group-item-success");
-        }
-        if (elem.hasClass("background-danger")) {
-            instructionElem.addClass("list-group-item-danger");
-        }
-        if (elem.hasClass("background-disabled")) {
-            instructionElem.addClass("disabled");
-        }
+		if (elem.hasClass("background-success")) {
+			instructionElem.addClass("list-group-item-success");
+		}
+		if (elem.hasClass("background-danger")) {
+			instructionElem.addClass("list-group-item-danger");
+		}
+		if (elem.hasClass("background-disabled")) {
+			instructionElem.addClass("disabled");
+		}
 
-        setTimeout(function() {
-            elem.detach();
-            instructionList.append(instructionElem);
-            instructionList.animate({
-                scrollTop: instructionList[0].scrollHeight
-            }, 200);
-        }, delay);
-        setTimeout(function() {
-            elem.addClass("out");            
-        }, delay - 200);
+		elem.addClass("out");            
+		setTimeout(function() {
+			elem.detach();
+			instructionList.append(instructionElem);
+			instructionList.animate({
+				scrollTop: instructionList[0].scrollHeight
+			}, 200);
+		}, 100);
     }
 
     this.insertNoOp = function(step) {

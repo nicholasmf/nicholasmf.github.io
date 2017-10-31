@@ -60,13 +60,11 @@ function PipelineStep(stepName, stepExecution, params) {
 		else {
 			elem = containerPipeline.children(`.${instruction.cycle}-${instruction.address}`);
 		}
-		setTimeout(function() {
-			elem.removeClass(prevStep);//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
-			elem.addClass(name);//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"
-			if (!instruction.executeMe) {
-				elem.removeClass('background-info');
-				elem.addClass('background-disabled');
-			}
-		}, 80);
+		elem.removeClass(prevStep);//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
+		elem.addClass(name);//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"
+		if (!instruction.executeMe) {
+			elem.removeClass('background-info');
+			elem.addClass('background-disabled');
+		}
     }
 }
