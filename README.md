@@ -3,9 +3,13 @@
 #           Guilherme Nishina Fortes
 ----------
 **Adicionar um novo processador**
-1. Adicionar uma pasta em /javascript/processors/{novo processador} e criar um arquivo pipeline.js. As etapas do pipeline podem ser criadas individualmente usando o base.js, onde é definido uma classe base que pode ser 
-usada como template para cada passo. A função render de cada base pega a instrucao da etapa anterior e passa à própria etapa que ela representa. Atenção especial deve ser tomada com os renders das etapas iniciais e
-finais de cada pipe. Todas as interações das etapas devem ser programadas caso a caso para cada processador.
+1. Adicionar uma pasta em /javascript/processors/{novo processador} e criar um arquivo pipeline.js.
+	-As etapas do pipeline podem ser criadas individualmente usando o base.js, onde é definido uma classe base que pode ser usada como template para cada passo.
+	-A função render de cada base pega a instrucao da etapa anterior e passa à própria etapa que ela representa.
+	-Atenção especial deve ser tomada com os renders das etapas iniciais e finais de cada pipe, pois eles pegam e mandam para as listas.
+	-Todas as interações das etapas devem ser programadas caso a caso para cada processador.
+	-O pipe deve ter uma função pipeLoop(lista_de_intruções, intervalo_de_execução, preditor_de_desvio, gerenciador_de_dependências). Ver em simulator.js.
+	-Em index.html, adicionar uma opção como <option value="seu_novo_pipe" selected>o_que_você_gostaria_que_aparecesse_no_botão</option> abaixo de <select class="form-control mr-sm-2" id="selectPipe">
 1. Adicionar a tag `<script>` em /index.html para importar os arquivos desejados
 1. Adicionar uma opção em /index.html no `<select>` de id "selectPipe" para o pipeline do novo processador e adicionar a opção na função "setPipe" em /javascript/index.js para a nova opção
 1. Caso queira adicionar um novo preditor de desvio, adicionar um arquivo branch-prediction.js na pasta criada, adicionar a respectiva tag `<script>` e adicionar as opções no `<select>` de id "selectBP" e função "setBP"

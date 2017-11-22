@@ -39,6 +39,19 @@ function ReorderBuffer(size) {
         }
     }
 
+    this.removeArray = function(instructions) {
+        const self = this;
+        let array = this.get('array');
+
+        instructions.forEach(instruction => {
+            if (instruction.executeMe) { return; }
+            let found = array.find(elem => { return elem.instruction === instruction});
+            if (found) console.log('found', found);
+            else { console.log ('not found'); }
+            if (found) self.remove(found);
+        });
+    }
+
     this.removeFirstN = function(n) {
         const self = this;
         let ordered = this.get('array').sort((a, b) => { return a.instruction.entryOrder - b.instruction.entryOrder });

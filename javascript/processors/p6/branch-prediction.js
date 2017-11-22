@@ -34,7 +34,7 @@ function AdaptivePredictorBTB() {
     var size = 8;
     var ways = 2;
     var sets = size/ways;
-    var phtBits = 3;
+    var phtBits = 2;
     this.cache = new associativeCache(size, ways);
 
     // target address if predict to be taken, undefined otherwise

@@ -83,25 +83,25 @@
                     <option value="test">Test Instructionset</option>
                     <option value="test2">Test2 Instructionset</option>                
                 </select>-->
-                <select class="form-control mr-sm-2" id="selectBP" onchange="setBP()">
-                    <option value="">-- Preditor de desvio --</option>
-                    <option value="btb">P5 BTB</option>
-                    <option value="apbtb" selected>Predição adaptativa</option>
-                </select>
-
-                <select class="form-control mr-sm-2" id="selectPipe" <!--onchange="setPipe()"-->>
+                <select class="form-control mr-sm-2" id="selectPipe" onchange="setPipe()">
                     <option value="">-- Pipeline --</option>
                     <option value="dummy">Simples</option>
                     <option value="p5">P5</option>
-                    <option value="p6" selected>P6</option>
+                    <option value="p6" >P6</option>
+                </select>
+
+                <select class="form-control mr-sm-2" id="selectBP" onchange="setBP()">
+                    <option value="">-- Preditor de desvio --</option>
+                    <option value="btb">P5 BTB</option>
+                    <option value="apbtb">Predição adaptativa</option>
                 </select>
 
                 <select class="form-control mr-sm-2" id="selectDH" onchange="setDH()">
                     <option value="">-- Dependências --</option>
-                    <option value="ignore" selected>Ignorar</option>
-                    <option value="stall">Esperar dependência</option>
+                    <option value="ignore">Ignorar</option>
+                    <option value="stall" selected>Esperar dependência</option>
                     <option value="OoO">Execução fora de ordem</option>
-                    <option value="OoOrenaming" selected>Execução fora de ordem com renomeamento</option>
+                    <option value="OoOrenaming">Execução fora de ordem com renomeamento</option>
                 </select>
 
                 <select class="form-control mr-sm-2" id="selectTimeInterval" onchange="setTimeInterval()">
@@ -141,10 +141,11 @@
                 </div>
             </div>
         </div>
-        <div class="container-fluid">
+        <div id="clockCounter">Ciclos totais:<span> 0</span></div>
+        <div class="container-fluid memory">
             <div class="row">
                 <div class="col-md-4">
-                    <h2>Data memory</h2>
+                    <h2>Memória de dados</h2>
                     <table id="dataMemory" class="table">
                         <thead>
                             <tr>
@@ -164,8 +165,8 @@
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="col-md-5">
-                    <h2>Registers Bank</h2>
+                <div class="col-md-5 registersParent">
+                    <h2>Banco de Registradores</h2>
                     <div id="registersContainer"></div>
                     <hr/>
                     <div id="tempRegistersContainer"></div>

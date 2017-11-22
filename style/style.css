@@ -1,3 +1,7 @@
+nav {
+    padding: 10px;
+}
+
 /************************** Lists *******************/
 #instructions, #finalList {
     transition: 0.2s ease-in-out;
@@ -45,8 +49,10 @@
     text-align: center;
     position: absolute;
     transition: all 1s ease-in-out;
+}
 
-    animation-name: pipeline-item-in;
+.pipeline-item.fetch {
+	animation-name: pipeline-item-in;
     animation-duration: .2s;
 }
 
@@ -127,6 +133,15 @@
     }
 }
 
+/************************* Cycles counter *****************/
+#clockCounter, #clockCounter span {
+    text-align: center;
+    width: 100vw;
+    font-size: 42px;
+    opacity: 0.5;
+    margin-top: 20px;
+}
+
 /************************ Data Memory *********************/
 #dataMemory {
     height: 180px;
@@ -137,6 +152,7 @@
 /*************************** Registers bank ***************/
 #registersContainer, #tempRegistersContainer {
     height: 100px;
+    width: auto;
     overflow-y: auto;
     overflow-x: hidden;
     padding-left: 15px;
@@ -211,13 +227,14 @@
 
 /*creates 4 separators for pipes with 5 stages */ 
 .fiveStepSeparator {
-    border-left: 5px dotted #3333333b;
-    border-right: 5px dotted #3333333b;
+    border-left: 5px dotted #333333;
+    border-right: 5px dotted #333333;
     position: absolute;
     width: 20%;
     height: 90%;
     top: -8%;
     z-index: -1;
+    opacity: 0.15;
 }
 .fiveStepLeft {
     left: 22%;
@@ -271,13 +288,23 @@
 
 /*all stepContainers for all pipes are created equal */
 .fiveStepContainer {
-	border: 1px dashed #3333333b;
+    border: 1px dashed #333333;
+    opacity: 0.15;
     width: 42px;
     height: 42px;
     position: absolute;
 	z-index: -1;
 }
 /*end of all stepContainers for all pipes are created equal */
+
+.activeBuffer {/* desenha o quadrado para indicar o buffer ativo */
+	border: 2px solid red;
+	z-index: 1;
+	position: absolute;
+	opacity: 0.2;
+	width: 42px;
+    height: 42px;
+}
 
 .fiveStepText {
 	z-index: -2;
@@ -299,13 +326,34 @@
 	top: 0;
 }
 .p5store{
-	left: 89%;
+	left: 87%;
 	top: 0;
 }
 .p5fetch{
 	left: 9%;
 	top: 0;
 }
+
+/*letras que aparecem quando quando tem branch no P5*/
+.p5DecodePredict {
+	position: absolute;
+	left: 30%;
+}
+.Inupipe {
+	top: 0%;
+}
+.Invpipe {	   
+    top: 0%;
+}
+.p5BranchResult {
+	position: absolute;
+	left: 69%;
+}
+.p5ExecuteBranch {
+	position: absolute;
+	left: 68%;
+}
+/* Fim de letras que aparecem quando tem branch no P5*/
 
 .dummyHeight {
     top: 21%;
@@ -315,13 +363,13 @@
     left: 26%;
 }
 .dummyLoad{
-	left: 70%;
+	left: 68%;
 }
 .DummyExecute{
 	left: 46%;
 }
 .DummyStore{
-	left: 89%;
+	left: 86%;
 }
 .DummyFetch{
 	left: 9%;
@@ -349,7 +397,8 @@
 }
 /*creates 5 separators for pipes with 6 stages */ 
 .sixStepSeparator {
-    border-left: 5px dotted #3333333b;
+    border-left: 5px dotted #333333;
+    opacity: 0.15;
     position: absolute;
     height: 90%;
     top: 0%;
@@ -358,19 +407,22 @@
 .sixStepLeft {
     left: 23%;
 	width: 18%;
-	border-right: 5px dotted #3333333b;
+    border-right: 5px dotted #333333;
+    opacity: 0.15;
 }
 .sixStepRight{
     left: 78%;
     width: 9%;
-	border-right: 5px dotted #3333333b;
+    border-right: 5px dotted #333333;
+    opacity: 0.15;
 }
 .sixStepMid {
 	left: 65%;
 }
 /*end of creates 5 separators for pipes with 6 stages */
 .p6StepContainer {
-	border: 1px dashed #3333333b;
+    border: 1px dashed #333333;
+    opacity: 0.15;
     width: 42px;
     height: 42px;
     position: absolute;
@@ -467,4 +519,11 @@
 	position: absolute;
     left: 67%;
     top: 64%;
+}
+
+/******************************* Memory components **********************************************/
+.memory {
+    bottom: 0;
+    height: 45vh;
+    position: fixed;
 }

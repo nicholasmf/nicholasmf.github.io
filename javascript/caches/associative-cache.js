@@ -71,7 +71,7 @@ function cacheNode(tag, value, history) {
             let children = blockElem.children();
             children.eq(index * 4 + 1).text(node.tag);
             children.eq(index * 4 + 2).text(node.value);
-            children.eq(index * 4 + 3).text(node.getHistory());
+            children.eq(index * 4 + 3).text(node.getHistory() > 1 ? "take" : "don't take");
             
             cache.container.animate({
                 scrollTop: blockElem[0].offsetTop - 100

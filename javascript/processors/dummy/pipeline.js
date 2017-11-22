@@ -25,6 +25,8 @@ function DummyPipe() {
 		let retArr = [];
 		let instruction = this.getStepInstruction();
 		if (instruction && dh) {
+			// If dh has rename, apply it
+			//if (dh.rename) { dh.rename(instruction); }
 			retArr[1] = dh.insert(instruction);
 		}
 		else {
@@ -48,8 +50,12 @@ function DummyPipe() {
 		return retArr;
 	}
 	
-	function loadExecution() {
-	
+	function loadExecution(dataMemory) {
+		let instruction = this.getStepInstruction();
+		if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
+		{//accesses memory
+			instruction.storeData = instruction.executethis(dataMemory);
+		}
 	}
 	
 	function executeExecution(branchPredictor, dh) {
@@ -69,9 +75,11 @@ function DummyPipe() {
 				branchPredictor.update(instruction.address, instruction.params.branchTo, instruction.params.branchResult);
 			}
 		}
+
+		dh.execute(instruction);
 	}
 	
-	function storeExecution(dataMemory, dh) {
+	function storeExecution(dh) {
 		
 		let instruction = this.getStepInstruction();
 		
@@ -80,11 +88,11 @@ function DummyPipe() {
 			instruction.params.dest.set(instruction.result);
 		}
 		// Load and Store
-		if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
+		if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER && isNumber(instruction.storeData))
 		{
-			instruction.executethis(dataMemory);
+			instruction.params.dest.set(instruction.storeData);
 		}
-		if (instruction && dh) {
+		if (instruction && dh) {//so ativo no tomasulo e scoreboarding ('desrenomeia' e tira da espera)
 			dh.execute(instruction);
 			dh.wb(instruction);
 		}
@@ -113,7 +121,7 @@ function DummyPipe() {
 	$("#pipelineDivGoesBeneath").append(containerPipeline);
 	
 	
-	var DummyNameArr = ['decode', 'load', 'execute', 'store', 'fetch'];
+	var DummyNameArr = ['decode', 'memr', 'execute', 'wback', 'fetch'];
 	var textIdentifierArr = ['dummyDecode', 'dummyLoad', 'DummyExecute', 'DummyStore', 'DummyFetch'];
 	for(let i=0; i<5; i++)
 	{
@@ -175,7 +183,7 @@ function DummyPipe() {
 	this.pipeLoop = function(instructions, loopControl, branchPredictor, dependencyHandler)
 	{
 //		console.log("/////////////////////////////////////////");
-        let dhRet = dependencyHandler ? dependencyHandler.getExecutables(1)[0] : null;
+		let dhRet = dependencyHandler ? dependencyHandler.getExecutables(1)[0] : null;
         let nextExecIns = dependencyHandler && decodeI ? ( dhRet === undefined ? new Instruction("NoOp") : dhRet === null ? decodeI : dhRet) : decodeI;
         if (decodeI && !decodeI.executeMe) { nextExecIns = decodeI; }
         else if (!dhResult) { nextExecIns = new Instruction("NoOp"); }
@@ -237,7 +245,7 @@ function DummyPipe() {
 			
 			if(loadI.executeMe)
 			{
-				this.load.execution(pc);
+				this.load.execution(SimplePipe.dataMemory);
 //				console.log("executing load");
 			}
 			
@@ -248,7 +256,7 @@ function DummyPipe() {
 		{
 			if(storeI.executeMe)
 			{
-				this.store.execution(SimplePipe.dataMemory, dependencyHandler);
+				this.store.execution(dependencyHandler);
 //				console.log("executing store");
 			}
 			// else
@@ -362,8 +370,10 @@ function DummyPipe() {
 		//////end of branch & sequential pc control //////////////////////
 		
 //		if(!stallDecode)
-			cycle++;
-		
+		cycle++;
+		// Updates html counter
+		$("#clockCounter span").text(cycle);
+
 //		console.log("pc: " + pc);
 		
 		if (!(fetchI || executeI || loadI || decodeI || storeI))

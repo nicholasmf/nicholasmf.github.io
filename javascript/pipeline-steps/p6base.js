@@ -12,12 +12,12 @@ function P6PipelineStep(stepName, stepExecution, params) {
         this[property] = params[property];
     }
 	
-	
+	// return all instructions from this step
 	this.getStepInstructions = function()
 	{
 		return instructions;
 	}
-
+    // adds received instructions to this step
 	this.setStepInstruction = function(newInstructions)
 	{
         if (!newInstructions) { return; }
@@ -30,7 +30,7 @@ function P6PipelineStep(stepName, stepExecution, params) {
             });
         }
 	}
-
+    // sets cycle property from all instructions in this step
 	this.setStepInstructionsCycle = function(cycle)
 	{
         instructions.map(item => {
@@ -39,18 +39,18 @@ function P6PipelineStep(stepName, stepExecution, params) {
             }
         });
 	}
-
+    // returns whether this step is empty or not
     this.isEmpty = function() {
         return instructions.length === 0;
     }
-
+    // remove instruction from this step
     this.remove = function(instruction) {
         let index = instructions.indexOf(instruction);
         if (index > -1) {
             instructions.splice(index, 1);
         }
     }
-
+    // marks all instructions in this step as disabled - when flushed
     this.disableInstructions = function(start) {
         instructions.map(instruction => {
             if (!isNumber(start) || (isNumber(start) && instruction.entryOrder > start)) {
@@ -75,7 +75,7 @@ function P6PipelineStep(stepName, stepExecution, params) {
         })
     }
 
-    // Return n first instructions according to filter
+    // Return n first instructions according to filter and remove from this step
     this.getNInstructions = function(n, filter) {
         let count = 0;
         let ins = instructions.filter(instruction => {

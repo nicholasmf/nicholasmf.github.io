@@ -20,22 +20,24 @@ Test2InstructionSet.MUL = function (dest, source1, source2) {
 Test2InstructionSet.MUL.latency = 1;
 Test2InstructionSet.LOAD = function (dest, address) 
 { 
-    return new Instruction("LOAD", DATA_TYPES.DATA_TRANSFER, null, {address: address, dest : dest}, true, function(memory) 
+    return new Instruction("LOAD", DATA_TYPES.DATA_TRANSFER, null, {dest : dest, address: address}, true, function(memory) 
     {
         let value = memory.get(address);
-        this.params.dest.set(value);
+		return value;//returns value to be written in another step
+        //this.params.dest.set(value);
     });
 };
 Test2InstructionSet.LOADI = function(dest, value) 
 {
     return new Instruction("LOADI", DATA_TYPES.DATA_TRANSFER, null, {dest: dest, value: value}, true, function() 
     {
-        this.params.dest.set(value);
+        return value;
+		//this.params.dest.set(value);
     });
 }
 Test2InstructionSet.STORE = function(source, address)
 {
-    return new Instruction("SAVE", DATA_TYPES.DATA_TRANSFER, null, {address: address, source: source}, true, function(memory)
+    return new Instruction("STORE", DATA_TYPES.DATA_TRANSFER, null, {source: source, address: address}, true, function(memory)
     {
         let value = getValue(this.params.source);
         memory.set(address, value);

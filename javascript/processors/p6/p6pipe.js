@@ -2,6 +2,7 @@ function P6Pipe() {
 	
     const SimplePipe = this;
     const reorderBuffer = new ReorderBuffer(256);
+    const memoryBuffer = new ReorderBuffer(256);
 
     function fetchExecution(instructions, pc, cycle) {
         let retArray = [];
@@ -32,12 +33,8 @@ function P6Pipe() {
     
         instructions.map(instruction => {
             if (!instruction.executeMe) { retArr[0].push(undefined); retArr[1].push(true); return; }
-            if (instruction && dh) {
-                retArr[1].push(dh.insert(instruction));
-            }
-            else {
-                retArr[1].push(true);
-            }
+            // If dh has renaming, apply it
+            //if (dh && dh.rename) dh.rename(instruction);
             var btbResult;
             
             if(instruction && instruction.type === DATA_TYPES.CONTROL && !instruction.alreadyPredicted)//para verificar se ja previ o branch se ele ficar parado
@@ -57,11 +54,23 @@ function P6Pipe() {
         return retArr;
     }
     
-    function loadExecution() {
-    
+    function loadExecution(dh) {
+        let instructions = this.getStepInstructions();
+        let retArr = [];
+        instructions.map(instruction => {
+            if (!instruction.executeMe) { retArr.push(true); return; }
+            if (instruction && dh) {
+                retArr.push(dh.insert(instruction));
+            }
+            else {
+                retArr.push(true);
+            }
+        });
+
+        return retArr;
     }
     
-    function executeExecution(branchPredictor, dh) {
+    function executeExecution(dataMemory, branchPredictor, dh) {
         
         let instructions = this.getStepInstructions();
         instructions.map(instruction => {
@@ -73,15 +82,22 @@ function P6Pipe() {
                 instruction.result = instruction.executethis();
                 //console.log("T0: ", instruction.params.dest);
             }
-            
+
             if (instruction && instruction.type === DATA_TYPES.CONTROL) {
                 if (instruction.name === "BRANCH IF ZERO") {
                     instruction.executethis();
                     branchPredictor.update(instruction.address, instruction.params.branchTo, instruction.params.branchResult);
                 }
             }
+			
+			if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER && (instruction.name === 'LOAD' || instruction.name === 'LOADI'))
+            { // If is load instruction, read from memory
+                instruction.storeData = instruction.executethis(dataMemory);
+                // removes instruction from memory buffer
+                memoryBuffer.removeFirstN(1);
+            }
 
-            dh.execute(instruction);
+            if (dh) dh.execute(instruction);
         });
     }
     
@@ -91,14 +107,23 @@ function P6Pipe() {
     
         instructions.map(instruction => {
             if (!instruction.executeMe) { return; }
-            if(instruction && instruction.result != undefined && instruction.type === DATA_TYPES.ARITHMETIC)
+            if(instruction && instruction.result != undefined && instruction.type === DATA_TYPES.ARITHMETIC && !dh.rename)
             {
                 instruction.params.dest.set(instruction.result);
             }
-            // Load and Store
+            //Load and Store
             if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
             {
-                instruction.executethis(dataMemory);
+				if(isNumber(instruction.storeData))
+				{//is load instruction must write to register
+					instruction.params.dest.set(instruction.storeData);
+				}
+                else
+				{//is store, writes to memory
+                    instruction.executethis(dataMemory);
+                    // removes instruction from memory buffer
+                    memoryBuffer.removeFirstN(1);
+				}
             }
             if (instruction && dh) {
                 dh.wb(instruction);
@@ -126,7 +151,8 @@ function P6Pipe() {
 	var containerPipeline = $('<div class="container pipeline p6"></div>');
 	$("#pipelineDivGoesBeneath").append(containerPipeline);
 	
-	
+    console.log('teste');
+    
 	$('.p6').append('<div class="sixStepSeparator sixStepLeft"></div>');
 	$('.p6').append('<div class="sixStepSeparator sixStepRight"></div>');
 	$('.p6').append('<div class="sixStepSeparator sixStepMid"></div>');
@@ -218,28 +244,43 @@ function P6Pipe() {
         wbBuffer.setStepInstruction( execute.getNInstructions() );
         store.setStepInstruction( wbBuffer.execution() );
         wbBuffer.render("execute", containerPipeline);
-        
-        execute.setStepInstruction( load.getNInstructions(execute.missingInstructions()) );
-        let nextLoadIns = undefined;
-        if (dependencyHandler) {
-            let executables = dependencyHandler.getExecutables( load.missingInstructions() );
-
-            if(executables.length === 1 && executables[0] === null) { 
-                nextLoadIns = decode.getNInstructions( load.missingInstructions() );
+        // Checks which instructions will go from decode step to execution step
+        let nextExecIns = (function() {
+            let nextIns = undefined;
+            if (dependencyHandler) {
+                let executables = dependencyHandler.getExecutables( execute.missingInstructions() );
+                // If is not waiting for any instruction, pass from load to execute
+                if(executables.length === 1 && executables[0] === null) {
+                    nextIns = load.getStepInstructions().slice(0, execute.missingInstructions() );
+                }
+                else {
+                    nextIns = executables;
+                }
             }
+            // If doesn't have dependency handler, pass from load to execute
             else {
-                nextLoadIns = executables;
-                decode.getNInstructions(3, function(item) {
-                    return executables.indexOf(item) > -1;
-                });
+                nextIns = load.getStepInstructions().slice(0, execute.missingInstructions() );
             }
-        }
-        else {
-            nextLoadIns = decode.getNInstructions( load.missingInstructions() );
-        }
-        load.setStepInstruction( nextLoadIns );
+            // Get all non memory access instructions
+            let nextExecIns = nextIns.filter(item => { return item.type !== DATA_TYPES.DATA_TRANSFER || !item.executeMe; });
+            // Get first memory instruction of the buffer
+            let firstMemIns = memoryBuffer.getFirstN(1)[0];
+            // If first instruction is to be executed, add on the list of instructions to be executed
+            if (nextIns.indexOf(firstMemIns) > -1) {
+                nextExecIns.push(firstMemIns);
+            }
+            console.log(nextIns, nextExecIns, firstMemIns);
+            // remove next instructions from load step and the flushed ones and return the array
+            return load.getNInstructions(3, function(item) {
+                return nextExecIns.indexOf(item) > -1 || !item.executeMe;
+            });
+        })();
+        execute.setStepInstruction( nextExecIns );
+        load.setStepInstruction( decode.getNInstructions( load.missingInstructions() ) );
         decode.setStepInstruction( fetch.getNInstructions( decode.missingInstructions() ) );
         reorderBuffer.insertArray(decode.getStepInstructions());
+        // Insert all memory instruction into memory reorder buffer
+        memoryBuffer.insertArray(decode.getStepInstructions().filter(item => { return item.type === DATA_TYPES.DATA_TRANSFER && item.executeMe; }));
 		pcOffset = fetch.missingInstructions();
         /////////////////// execucao das etapas /////////////////////////////
         // var predictionAddr = fetch.execution(instructions, pc, cycle, branchPredictor);
@@ -255,17 +296,17 @@ function P6Pipe() {
 		executeI = execute.getStepInstructions();
 		storeI = store.getStepInstructions();		
 
-        //executo fetch, pois ele apenas pega a proxima instrucao da memoria
+       
 		if(!decode.isEmpty())
 		{	
 //                console.log("executing decode");
-            [predictionAddr, dhResult] = decode.execution(branchPredictor, dependencyHandler);
+            [predictionAddr] = decode.execution(branchPredictor, dependencyHandler);
 		}
         decode.render("fetch", containerPipeline);
 		
 		if(!load.isEmpty())
 		{
-            load.execution(pc);
+            dhResult = load.execution(dependencyHandler);
 //				console.log("executing load");
 			
         }
@@ -273,7 +314,7 @@ function P6Pipe() {
 		
 		if(!execute.isEmpty())
 		{
-            execute.execution(branchPredictor, dependencyHandler);
+            execute.execution(SimplePipe.dataMemory, branchPredictor, dependencyHandler);
 //				console.log("executing execute");
         }
         execute.render("load", containerPipeline);
@@ -291,33 +332,13 @@ function P6Pipe() {
 				
 		/////////////////// fim da execucao das etapas /////////////////////////////
 		
-		//  console.log(fetch.getStepInstruction());
-		//  console.log(decode.getStepInstruction());
-		//  console.log(load.getStepInstruction());
-		//  console.log(execute.getStepInstruction());
-		//  console.log(store.getStepInstruction());
-		
-		//debugger;
-		
 		//////pipeline flushing control //////////////////////
 		if(!decode.isEmpty())
 		{
             decode.getStepInstructions().map((instruction, i) => {
                 if(instruction.type === DATA_TYPES.CONTROL && predictionAddr[i] && instruction.executeMe)
                 {
-                    fetch.disableInstructions(instruction.entryOrder);
-                    decode.disableInstructions(instruction.entryOrder);
-                    load.disableInstructions(instruction.entryOrder);
-                    execute.disableInstructions(instruction.entryOrder);
-                    wbBuffer.disableInstructions(instruction.entryOrder);
-                    store.disableInstructions(instruction.entryOrder);
-                    if (dependencyHandler) {
-                        decode.removeFromDH(dependencyHandler);
-                        load.removeFromDH(dependencyHandler);
-                        execute.removeFromDH(dependencyHandler);
-                        wbBuffer.removeFromDH(dependencyHandler);
-                        store.removeFromDH(dependencyHandler);
-                    }
+                    flush(instruction.entryOrder, dependencyHandler);
                 }
             });
 		}
@@ -327,31 +348,10 @@ function P6Pipe() {
             execute.getStepInstructions().map((instruction, i) => {
                 if(instruction.type === DATA_TYPES.CONTROL && instruction.executeMe && instruction.params.branchResult !== instruction.btbResult)//e esses enderecos nao forem iguais, errei munha previsao
                 {
-                    //console.log("mistakes were made, flushing pipe");
-//                    flushControl = executeI.cycle;//flush control recebe o ciclo da instrucao de branch q causou o flush
-//                    stopFlushControl = cycle;//recebe o ciclo onde o flush foi iniciado
-                    fetch.disableInstructions(instruction.entryOrder);
-                    decode.disableInstructions(instruction.entryOrder);
-                    load.disableInstructions(instruction.entryOrder);
-                    execute.disableInstructions(instruction.entryOrder);
-                    wbBuffer.disableInstructions(instruction.entryOrder);
-                    store.disableInstructions(instruction.entryOrder);
-                    if (dependencyHandler) {
-                        decode.removeFromDH(dependencyHandler);
-                        load.removeFromDH(dependencyHandler);
-                        execute.removeFromDH(dependencyHandler);
-                        wbBuffer.removeFromDH(dependencyHandler);
-                        store.removeFromDH(dependencyHandler);
-                    }
+                    flush(instruction.entryOrder, dependencyHandler);
                 }
             });
 		}
-		
-		// if(cycle === stopFlushControl + 4)//passaram-se 4 ciclos desde o inicio do flush, posso parar
-		// {
-		// 	flushControl = -5;
-		// 	stopFlushControl = -5;
-		// }
 		
 		//////end of pipeline flushing control //////////////////////
 		if (!execute.isEmpty())
@@ -403,52 +403,11 @@ function P6Pipe() {
                 pc = pc + pcOffset;
             }
         })();
-
-// 		if(executeI && executeI.type === DATA_TYPES.CONTROL && executeI.executeMe/*(executeI.cycle === flushControl + 3 || flushControl === -5 || executeI.cycle === flushControl)*/ )
-// 		{//execute tem uma instrucao de branch
-// //			console.log("1: was: " + executeI.params.branchResult + " predicted: " + executeI.btbResult);
-// 			if(executeI.params.branchResult === executeI.btbResult)//eu acertei
-//             {
-// 				if(predictionAddr)
-// 				{// se houver um novo branch em "decode" ele devera ser executado e tento prevejo seu destino
-// 					pc = predictionAddr;
-// 				}
-// 				else
-// 				{//se nao houver especulacoes, procedo sequencialmente
-// 					if (!stallDecode) pc++;
-// 				}
-// 			}
-// 			else
-// 			{//eu errei a previsao
-// 				if(executeI.params.branchResult)//se eu errei pq houve pulo, previ q nao
-// 				{//pula o pc para a instrucao alvo
-// 					pc = executeI.getTargetAddr();
-// 				}
-// 				else
-// 				{//senao pula o pc para + 1
-// 					pc = executeI.address + 1;
-// 				}
-// 			}
-// 		}
-// 		else
-// 		{
-//             if(executeI && executeI.type === DATA_TYPES.CONTROL)
-// 			{
-// //				console.log("2: was: " + executeI.params.branchResult + " predicted: " + executeI.btbResult);	
-// 			}
-// 			if(predictionAddr)
-//             {
-//                 pc = predictionAddr;
-//             }
-//             else
-//             {
-//                 if (!stallDecode) pc++;
-//             }
-// 		}
 		//////end of branch & sequential pc control //////////////////////
 		
-//		if(!stallDecode)
-			cycle++;
+        cycle++;
+		// Updates html counter
+		$("#clockCounter span").text(cycle);
 		
 //		console.log("pc: " + pc);
 		
@@ -466,20 +425,8 @@ function P6Pipe() {
     
     // Overwrite fetch render
     fetch.render = function() {
-        		//var midCol = $("#pipelineDivGoesBeneath");
-		//midCol.append(containerPipeline);
-        //var pipeline = $('<div class="container pipeline">\n</div>');//$(".pipeline");	
         var instructionList = $("#instructions");
         instructionList.children('.active').removeClass('active');
-        // if (pipeSim.fillNoop > 0) {
-        //     var instructionElem = $("<div class='pipeline-item background-danger fetch'>NoOp</div>");
-        //     setTimeout(function() {
-        //         //elem.detach();
-        //         pipeline.append(instructionElem);
-        //     }, 100);
-        //     return new Instruction("NoOp");
-        // }
-        // else 
         const pipeStep = this;
         var instructions = this.getStepInstructions();
         var scrollTo = (instructions[0] || {}).address;
@@ -603,9 +550,13 @@ function P6Pipe() {
         });
     }
 
-    // this.disableInstruction = function(step) {
-    //     let elem = containerPipeline.find(`.${step}`);
-    //     elem.removeClass("background-info");
-    //     elem.addClass("background-disabled");
-    // }
+    function flush(entryOrder, dependencyHandler) {
+        [fetch, decode, load, execute, wbBuffer, store].forEach(step => {
+            step.disableInstructions(entryOrder);
+            memoryBuffer.removeArray(step.getStepInstructions());
+            if (dependencyHandler) {
+                step.removeFromDH(dependencyHandler);
+            }
+        });
+    }
 }

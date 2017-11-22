@@ -15,7 +15,11 @@ const V0 = simulator.registersArray[50];
 function start() {
 	//var architecture = new P5Pipe("");
     //var architecture = new P5Arq();
-    setPipe();
+    $("#pipelineDivGoesBeneath").empty();
+    var val = $("#selectPipe").val();
+    if (val === "dummy") pipe = new DummyPipe();
+    if (val === "p5") pipe = new P5Arq();
+    if (val === "p6") pipe = new P6Pipe();
     setTimeInterval();
     setBP();
     setDH();
@@ -43,63 +47,6 @@ function nextStep() {
     simulator.nextStep();
 }
 
-// function setInstructionset() {
-//     var select = $("#selectInstructionset");
-//     var value = select.val();
-	
-	
-	
-// 	if (value === "test") {
-//         iSet = TestInstructionSet;
-//         code = [
-//             iSet.LOADI(T0, 0),
-//             iSet.BRANCH_IF_ZERO(T0, 5),
-//             iSet.DUMMY(),
-//             iSet.DUMMY(),
-//             iSet.DUMMY(),
-//             iSet.LOADI(T1, -4),
-//             iSet.DUMMY(),
-//             iSet.ADD(T1, 1),
-//             iSet.BRANCH_IF_ZERO(T1, 9),
-//             iSet.BRANCH_IF_ZERO(T0, 6),
-//             iSet.LOADI(T0, 1),
-//             iSet.DUMMY(),
-//             iSet.DUMMY(),
-//             iSet.DUMMY(),
-        
-//         ];
-//     }
-//     else if (value === "test2") {
-//         iSet = Test2InstructionSet;
-		
-// 		code = [
-//             iSet.SET(T0, 0),
-//             iSet.BRANCH_IF_ZERO(T0, 5),
-//             iSet.LOAD(),
-//             iSet.LOAD(),
-// 			iSet.LOAD(),
-// 			iSet.SET(T1, -4),
-//             iSet.ADD(T1, 1),
-// 			iSet.BRANCH_IF_ZERO(T1, 9),
-// 			iSet.BRANCH_IF_ZERO(T0, 5),
-// 			iSet.SET(T0, 1),
-// 			iSet.BRANCH_IF_ZERO(T0, 5),
-//         ];
-//     }
-//     else {
-//         iSet = null;
-//         code = null;
-//     }
-	
-// 	if(code)
-// 	{
-// 		code.map(function(item, i) {
-// 					item.address = i;
-// 				}
-// 		)
-// 	}
-// }
-
 function setTimeInterval() {
     var elem = $("#selectTimeInterval").val();
     simulator.setTimeInterval(elem);
@@ -116,9 +63,22 @@ function setBP() {
 
 function setPipe() {
     var val = $("#selectPipe").val();
-    if (val === "dummy") pipe = new DummyPipe();
-    if (val === "p5") pipe = new P5Arq();
-    if (val === "p6") pipe = new P6Pipe();
+    if (val === "dummy") {
+        $('#selectBP').attr('disabled', false);
+        $('#selectDH').attr('disabled', false);
+    }
+    if (val === "p5") {
+        $('#selectBP').attr('disabled', true);
+        $('#selectBP').val("btb");
+        $('#selectDH').attr('disabled', true);
+        $('#selectDH').val("stall");
+    }
+    if (val === "p6") {
+        $('#selectBP').attr('disabled', true);
+        $('#selectBP').val("apbtb");
+        $('#selectDH').attr('disabled', true);
+        $('#selectDH').val("OoOrenaming");
+    }
 }
 
 function setDH() {

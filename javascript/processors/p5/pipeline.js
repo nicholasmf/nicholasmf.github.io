@@ -409,6 +409,9 @@ function P5Pipe() {
 		console.log("////////////////////////////");
 		
 		cycle++;
+		// Updates html counter
+		$("#clockCounter span").text(cycle);
+				
 		
 		if ( !(fetchAI[inBuffer] || decode1UI || decode2UI || executeUI || storeUI || fetchBI[inBuffer] || decode1VI || decode2VI || executeVI || storeVI) )
 		{

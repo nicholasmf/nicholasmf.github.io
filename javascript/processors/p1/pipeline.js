@@ -8,6 +8,9 @@ function P5Pipe(htmlClass) {
 	var instruction = new Array(2);//simula meu buffer de 2 posicoes
 	var result = {}, lastResult = {};
     var decodeI, loadI, executeI, storeI; //var guarda a instrucao I na etapa n (nI)
+	var lastStoreI;
+	var lastInBuffer = 0;
+	var pipeEnd = false;
 	
 	
 	var containerPipeline = $('<div id="'+ htmlClass + 'Id" class="container pipeline ' + htmlClass + '"></div>');
@@ -28,6 +31,8 @@ function P5Pipe(htmlClass) {
 	$(querySelectorString).append('<div class="fiveStepSeparator fiveStepLeft"></div>');
 	$(querySelectorString).append('<div class="fiveStepSeparator fiveStepRight"></div>');
 	
+	$(querySelectorString).append('<div class="activeBuffer p5Buffer-0 fiveStepFetchGhost"></div>');//o buffer ativo comeca com 0
+	
     this.init = function(dataMemory) {
         pipeSim.dataMemory = dataMemory;
     }
@@ -35,6 +40,15 @@ function P5Pipe(htmlClass) {
 	var correctlyPredictedYes;//retorna se o branch especulativo foi correto para o caso positivo
 	
 	//this.lastDecodeI;
+	this.getPipeEnd = function ()
+	{
+		return pipeEnd;
+	}
+	
+	this.getStoreInstruction = function()
+	{
+		return storeI;
+	}
 	
 	this.getExecuteInstruction = function()
 	{
@@ -42,7 +56,7 @@ function P5Pipe(htmlClass) {
 	}
 	
 	this.getLoadInstruction = function()
-	{
+	{//load step is decode2
 		return loadI;
 	}
 	
@@ -75,31 +89,37 @@ function P5Pipe(htmlClass) {
 	*/
 	
 	//pipeName eh so para funs de debug
-	this.p5cycle = function(BTB, instructions, pc, execution, fillNoop, substituteInstruction, pipeDo, inBuffer, cycle, pipeName) {	
-
+	this.p5cycle = function(BTB, instructions, pc, execution, fillNoop, substituteInstruction, pipeDo, inBuffer, cycle, pipeName, dh) {
+	
 		pipeSim.fillNoop = fillNoop;
+		console.log("fillNoopstart", pipeSim.fillNoop);
 		correctlyPredictedYes = false;
 				
 		if(pipeDo.store)
 			lastResult = result;
 		
+		lastStoreI = storeI;//guarda a instrução em store da ultima iteracao
 		if(pipeDo.execute)
 			storeI = executeI;
+
 		if(pipeDo.load)
 			executeI = loadI;
+		else
+		{
+			executeI = undefined;
+		}
 		
 		if(pipeDo.decode)
 			loadI = decodeI;
 		
-		if(!pipeDo.fetch && inBuffer.changedLastIter && !instruction[inBuffer.number])
-		{//se o fetch estiver travado, mas eu mudei meu buffer e o fetch nao tem nada, devo executar mesmo assim
-			instruction[inBuffer.number] = pipeSim.fetchStep(pc, instructions);
-			if(instruction[inBuffer.number])
-			{
-				$('#entry-'+instruction[inBuffer.number].inOrder).addClass("buffer-"+inBuffer.number);
-			}
-			
-		}
+		//if(!pipeDo.fetch && inBuffer.changedLastIter && !instruction[inBuffer.number])
+		//{//se o fetch estiver travado, mas eu mudei meu buffer e o fetch nao tem nada, devo executar mesmo assim
+			//instruction[inBuffer.number] = pipeSim.fetchStep(pc, instructions, instruction[inBuffer.number]);
+			//if(instruction[inBuffer.number])
+			//{//adiciono a classe depois do fetch pq a funcao nao recebe o numero do buffer e apenas retorna a instrucao
+				//$('#entry-'+instruction[inBuffer.number].inOrder).addClass("buffer-"+inBuffer.number);
+			//}	
+		//}
 		
 		if(pipeDo.fetch)
 		{
@@ -108,11 +128,23 @@ function P5Pipe(htmlClass) {
 				if(inBuffer.number === 0)
 				{
 					decodeI = instruction[1];//falo para avancar com o buffer errado
+					if(instruction[1])
+					{
+						var elem = $('#entry-' + instruction[1].inOrder);
+						elem.detach();
+					}
+					console.log("wrong prediction: destroying instruction in buffer 1");
 					instruction[1] = undefined;//e esvazio ele
 				}
 				else
 				{
 					decodeI = instruction[0];
+					if(instruction[0])
+					{
+						var elem = $('#entry-' + instruction[0].inOrder);
+						elem.detach();
+					}
+					console.log("wrong prediction: destroying instruction in buffer 0");
 					instruction[0] = undefined;
 				}
 			}
@@ -126,12 +158,34 @@ function P5Pipe(htmlClass) {
 	//instruction = sim.fetchStep((BTB.predict(pc) ? BTB.predict(pc) : pc < instructions.length ? pc : -1), instructions);//pega 1 unica instrucao por vez da minha lista de instrucoes		
 		//var btbResult = (decodeI && pipeDo.decode) ? BTB.predict(decodeI.address) : undefined;
 		var btbResult;
-		if(decodeI && pipeDo.decode)
+		if(decodeI && pipeDo.decode && pipeSim.fillNoop === 0 && decodeI.type === DATA_TYPES.CONTROL && !decodeI.branchAlreadyPredicted)
 		{
 			btbResult = BTB.predict(decodeI.address);//btbResult recebe o endereco da instrucao q irei pular para (especulativamente)
+			decodeI.branchAlreadyPredicted = true;
 		}
 		else
 			btbResult = undefined;
+		
+		if(btbResult != undefined && !decodeI.renderAlreadyPredicted)
+		{
+			$('.container.pipeline.'+ htmlClass).append("<div class='positivePredict p5DecodePredict In" + htmlClass +"'>Jump</div>");
+			var fade_out = function() {
+				$(".p5DecodePredict").fadeOut().remove();
+			}
+
+			setTimeout(fade_out, 840);
+			decodeI.renderAlreadyPredicted = true;
+		}
+		else if (decodeI && decodeI.type === DATA_TYPES.CONTROL && !decodeI.renderAlreadyPredicted)
+		{
+			$('.container.pipeline.'+ htmlClass).append("<div class='p5DecodePredict In" + htmlClass + "'>No Jump</div>");
+			var fade_out = function() {
+				$(".p5DecodePredict").fadeOut().remove();
+			}
+
+			setTimeout(fade_out, 840);
+			decodeI.renderAlreadyPredicted = true;
+		}
 		
 		console.log("btbR: " + btbResult);
 		
@@ -163,7 +217,7 @@ function P5Pipe(htmlClass) {
 			}
 			if(pc < instructions.length)
 			{
-				instruction[inBuffer.number] = pipeSim.fetchStep(pc, instructions);
+				instruction[inBuffer.number] = pipeSim.fetchStep(pc, instructions, decodeI);
 				if(instruction[inBuffer.number])
 				{
 					
@@ -174,7 +228,7 @@ function P5Pipe(htmlClass) {
 			}
 			else
 			{
-				instruction[inBuffer.number] = pipeSim.fetchStep(-1, instructions);
+				instruction[inBuffer.number] = pipeSim.fetchStep(-1, instructions, decodeI);
 			}
 			if(!btbResult && instruction[inBuffer.number] && decodeI)
 			{
@@ -188,59 +242,78 @@ function P5Pipe(htmlClass) {
 		
 		if(substituteInstruction.Place === 'load')
 		{
+			loadI = substituteInstruction.Instruction;
 			if(loadI)
 			{
-				console.log("substituting in load step " + loadI.name + " in " + pipeName + "for " + substituteInstruction.Instruction.name);
+				//console.log("substituting in load step " + loadI.name + " in " + pipeName + "for " + substituteInstruction.Instruction.name);
+				var elem = $('#entry-' + loadI.inOrder);
+				elem.detach();
+				containerPipeline.append(elem);
+				elem.removeClass("decode");//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
+				elem.addClass("load");//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"
 			}
-				loadI = substituteInstruction.Instruction;
-				//substitution.load = true;
+				
 		}
 		
 
 		if(pipeDo.decode)
 		{
 			console.log("executing " + pipeName + "decode");
-			pipeSim.decode(substituteInstruction, decodeI);
+			pipeSim.decode(substituteInstruction, loadI);
 		}
 			
 		if(pipeDo.load)
 		{
 			console.log("executing " + pipeName + "load");
-			pipeSim.load(substituteInstruction, loadI);
-		}
-			
-		if(pipeDo.store)
-		{
-			console.log("executing " + pipeName + "store");
-			pipeSim.store(storeI, lastResult);
+			pipeSim.load(substituteInstruction, loadI, dh, executeI);
 		}
 			
 		if(pipeDo.execute)
 		{
 			console.log("executing " + pipeName + "execute");
-			result = pipeSim.execute(executeI);//result eh da instrucao que esta no execute e lastResult eh da instrucao q ta no store
+			//console.log("INSTRUCTIONS: ",executeI, storeI);
+			result = pipeSim.execute(executeI, storeI);//result eh da instrucao que esta no execute e lastResult eh da instrucao q ta no store
+			console.log("result:", result);
 			if(correctlyPredictedYes)
 			{
 				if(inBuffer.number === 0)
 				{
 					console.log("destroying instruction in buffer 1"); 
+					if(instruction[1])
+					{
+						var elem = $('#entry-' + instruction[1].inOrder);
+						elem.detach();
+					}
 					instruction[1] = undefined;//invalido a instrucao em fetch do outro buffer
+					
 				}
 				else
 				{
 					console.log("destroying instruction in buffer 0"); 
+					if(instruction[0])
+					{
+						var elem = $('#entry-' + instruction[0].inOrder);
+						elem.detach();
+					}
 					instruction[0] = undefined;
 				}
 			}
 		}
-			
-		pipeSim.end(execution, pc);
+		
+		if(pipeDo.store)
+		{
+			console.log("executing " + pipeName + "store");
+			pipeSim.store(storeI, lastResult, dh, execution, pc, lastStoreI);
+		}
+		
+		//pipeSim.end(execution, pc);
 		
 		if( !instruction[inBuffer.number] && !decodeI && !loadI && !executeI && !storeI )//se meu pipe estiver vazio depois de uma execucao, encerro
-			clearInterval(execution);
+			pipeEnd = true;
+			//clearInterval(execution);
 		//console.log(executeI, result, pipeSim.fillNoop);
 
-		if(executeI && executeI.type === DATA_TYPES.CONTROL){
+		if(executeI && executeI.type === DATA_TYPES.CONTROL && pipeSim.fillNoop%4 === 0 ){
 			BTB.update(executeI.address, executeI.params.branchTo, executeI.params.branchResult);
 			//console.log(executeI.address);
 		}
@@ -259,17 +332,17 @@ function P5Pipe(htmlClass) {
 			console.log(pipeName + "S: " + storeI.name + " addr: " + storeI.address);
 		
 		var lastResultReturn = lastResult;
-		
+		console.log("fillNoopend", pipeSim.fillNoop);
 		return [result, pipeSim.fillNoop, btbResult, correctlyPredictedYes];
 	}
 	
 	/*************** Fetch *********************/
-    this.fetchStep = function(pc, instructions) {//funcao q desenha as caixinhas a cada iteracao (1s)
+    this.fetchStep = function(pc, instructions, decodeI) {//funcao q desenha as caixinhas a cada iteracao (1s)
 		//var midCol = $("#pipelineDivGoesBeneath");
 		//midCol.append(containerPipeline);
         //var pipeline = $('<div class="container pipeline">\n</div>');//$(".pipeline");	
         var instructionList = $("#instructions");
-        instructionList.children('.active').removeClass('active');
+        //instructionList.children('.active').removeClass('active');
         // if (pipeSim.fillNoop > 0) {
         //     var instructionElem = $("<div class='pipeline-item background-danger fetch'>NoOp</div>");
         //     setTimeout(function() {
@@ -279,6 +352,18 @@ function P5Pipe(htmlClass) {
         //     return new Instruction("NoOp");
         // }
         // else 
+			
+		
+		
+		 
+		if(decodeI)
+		{
+			var elem = $('#entry-' + decodeI.inOrder);
+			elem.removeClass("fetch");//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
+			elem.addClass("decode");//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"	
+		}
+		
+		
         if (pc > -1) {
             var instruction = instructions[pc].copy();
 			var instructionOperands = getOperands(instruction);
@@ -314,6 +399,9 @@ function P5Pipe(htmlClass) {
 
             //}, 60);//talvez nao precise de delay
 			instruction.inOrder = globalPipeInOrderEntry++;
+			instruction.executeMe = true;
+			instruction.branchAlreadyPredicted = false;
+			instruction.renderAlreadyPredicted = false;
             return instruction;//retorna a instrucao na posicao pc
         }
         else { 
@@ -325,31 +413,40 @@ function P5Pipe(htmlClass) {
     this.decode = function(substituteInstruction, instruction) {//so parte grafica, por enquanto?
         if (instruction) {
 			var auxSubstI = {Place: substituteInstruction.Place, Instruction: substituteInstruction.Instruction };
-            setTimeout(function() {
-				if(auxSubstI.Place === 'decode')
+            //setTimeout(function() {
+				/*if(auxSubstI.Place === 'decode')
 				{
 					var elem = $('#entry-' + auxSubstI.Instruction.inOrder);
 					elem.detach();
 					containerPipeline.append(elem);
 					// elem.detach();
 					// containerPipeline.append("<div class='pipeline-item background-info decode'>" + auxSubstI.Instruction.name + "</div>")
-				}
-				else 
-				{
+				}*/
+				//else 
+				//{
 					var elem = $('#entry-' + instruction.inOrder);
-				}
-				elem.removeClass("fetch");//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
-				elem.addClass("decode");//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"
-		}, 80)
+				//}
+				elem.removeClass("decode");//muda as caracteristicas do html (abaixo) pra passar cada bloquinho para a proxima etapa
+				elem.addClass("load");//"<div class='pipeline-item background-info fetch'>" + instruction.name + "</div>"
+		//}, 80)
         }
 				
     }
 
-    this.load = function(substituteInstruction, instruction) {
+    this.load = function(substituteInstruction, instruction, dh, executeI) {
 		//var elem = containerPipeline.children(".decode:eq(0)");
-        if (instruction) {
+		
+		if(executeI)
+		{
+			var elem = $('#entry-' + executeI.inOrder);
+			elem.removeClass("load");
+			elem.addClass("execute");
+		}
+		
+        
+		if (instruction) {
 			var auxSubstI = {Place: substituteInstruction.Place, Instruction: substituteInstruction.Instruction };
-            setTimeout(function() {
+            /*setTimeout(function() {
 				if(auxSubstI.Place == 'load')
 				{
 					// if(auxSubstI.Instruction.name == 'NoOp')
@@ -366,34 +463,46 @@ function P5Pipe(htmlClass) {
 							// containerPipeline.append("<div class='pipeline-item background-info decode'>" + auxSubstI.Instruction.name + "</div>")
 				}
 				else 
-				{
-					var elem = $('#entry-' + instruction.inOrder);
-				}
+				{*/
+					//var elem = $('#entry-' + executeI.inOrder);
+				//}
 
 				//containerPipeline.append("<div class='pipeline-item background-info load'>" + auxSubstI.Instruction.name + "</div>");
-                elem.removeClass("decode");//muda as caracteristicas do html pra passar cada bloquinho para a proxima etapa(idem ao anterior)
-                elem.addClass("load");
-            }, 100);
+                //elem.removeClass("load");
+                //elem.addClass("execute");
+            //}, 100);
+			
+			if(auxSubstI.Place == 'load')
+			{
+				dh.insert(substituteInstruction.Instruction);
+			}
+			else
+			{
+				dh.insert(instruction);
+			}
         }
     }
 
-    this.execute = function(instruction) {
+    this.execute = function(instruction, storeI) {
         var result = {};
+		var isFlushing = pipeSim.fillNoop === 0;
+		if(storeI)
+		{
+			var elem = $('#entry-' + storeI.inOrder);
+			//if (elem) {
+				//setTimeout(function() {
+					elem.removeClass("execute");
+					elem.addClass("store");
 
-        var count = containerPipeline.children(".load").length;
-        var elem = containerPipeline.children(".load:eq(0)");
-        var isFlushing = pipeSim.fillNoop === 0;
-        if (count) {
-			setTimeout(function() {
-                elem.removeClass("load");
-                elem.addClass("execute");
-
-                if (elem.hasClass("background-info") && isFlushing) {//background info eh "azul"
-                    elem.removeClass("background-info");//retira o azul do bloquinho e coloca verde
-                    elem.addClass("background-success");//nota: essas cores estao no .css              
-                }
-            }, 120);
-        }
+					if (elem.hasClass("background-info") && isFlushing) {//background info eh "azul"
+						elem.removeClass("background-info");//retira o azul do bloquinho e coloca verde
+						elem.addClass("background-success");//nota: essas cores estao no .css              
+					}
+				//}, 120);
+			//}
+		
+		}
+		console.log("isFlushing:", isFlushing);
 		if(isFlushing)
 		{		
 			if(instruction && instruction.type === DATA_TYPES.ARITHMETIC)
@@ -407,6 +516,11 @@ function P5Pipe(htmlClass) {
 				console.log(instruction.params.branchResult, instruction.btbResult);
 				if (instruction.params.branchResult !== instruction.btbResult)
 				{
+					$('.container.pipeline.' + htmlClass).append("<div class='wrongBranch p5ExecuteBranch In" + htmlClass + "'>Misprediction</div>");
+					var fade_out = function() {
+						$(".p5ExecuteBranch").fadeOut().remove();
+					}
+					setTimeout(fade_out, 850);
 					this.flush(3);//comeco a dar flush se a previsao foi errada
 					//console.log("gone flushing");
 					if(instruction.params.branchResult)
@@ -422,66 +536,98 @@ function P5Pipe(htmlClass) {
 				{//previ certo (branch: verdadeiro e especulacao: verdadeiro)
 				//devo invalidar o buffer q nao estou mais usando
 					correctlyPredictedYes = true;
+					$('.container.pipeline.' + htmlClass).append("<div class='rightBranch p5ExecuteBranch In" + htmlClass + "'>Correct</div>");
+					var fade_out = function() {
+						$(".p5ExecuteBranch").fadeOut().remove();
+					}
+					setTimeout(fade_out, 850);
 				}
-			}	
+				else
+				{
+					$('.container.pipeline.' + htmlClass).append("<div class='rightBranch p5ExecuteBranch In" + htmlClass + "'>Correct</div>");
+					var fade_out = function() {
+						$(".p5ExecuteBranch").fadeOut().remove();
+					}
+					setTimeout(fade_out, 850);
+				}
+			}
+			//console.log("Execute instr:", instruction);
+			if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
+			{//accesses memory
+				instruction.storeData = instruction.executethis(pipeSim.dataMemory);
+			}			
 		}
 
         return result;
     }
 
-    this.store = function(instruction, result) {
-        var count =  containerPipeline.children(".execute").length;
-        var elem = containerPipeline.children(".execute:eq(0)");
-        if (count) {
-            setTimeout(function() {
-                elem.removeClass("execute");
-                elem.addClass("store");
-            }, 140);
-        }
-        console.log("fillNoop", pipeSim.fillNoOp);
+    this.store = function(instruction, result, dh, interval, pc, lastStoreI) {
+		//console.log("STORE:", instruction);
+        //var elem = $('#entry-' + instruction.inOrder);
+        //if (count) {
+        //    setTimeout(function() {
+                //elem.removeClass("execute");
+               // elem.addClass("store");
+        //    }, 140);
+        //}
+		pipeSim.end(interval, pc, lastStoreI);
+        console.log("fillNoop", pipeSim.fillNoop);
         if (pipeSim.fillNoop === 0) {
             if(result.ula != undefined && instruction && instruction.type === DATA_TYPES.ARITHMETIC)
             {
                 instruction.params.dest.set(result.ula);
             }
 			// Load and Store
-			console.log("instruction && instruction.type === DATA_TYPES.DATA_TRANSFER", instruction)
-            if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
-            {
-                instruction.executethis(pipeSim.dataMemory);
-            }
+			//console.log("instruction && instruction.type === DATA_TYPES.DATA_TRANSFER", instruction)
+            //if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER) 
+            //{
+            //   instruction.executethis(pipeSim.dataMemory);
+            //}
+			// Load and Store
+			//console.log("store Instruction:", instruction);
+			if(instruction && instruction.type === DATA_TYPES.DATA_TRANSFER && isNumber(instruction.storeData))
+			{
+				//console.log("hello!!1");
+				instruction.params.dest.set(instruction.storeData);
+			}
         }
+		
+		dh.remove(instruction);
     }
 
-    this.end = function(interval, pc) {
-        var count =  containerPipeline.children(".store").length;
-        var instruction = containerPipeline.children(".store:eq(0)");
-        var pipeline = $(".pipeline");
-        var instructionList = $("#finalList");
-        var instructionElem = $("<li class='list-group-item'>" + instruction.text() + "</li>");
+    this.end = function(interval, pc, instruction) {
+		if(instruction)
+		{
+			var elem = $('#entry-' + instruction.inOrder);
+			var pipeline = $(".pipeline");
+			var instructionList = $("#finalList");
+			var instructionElem = $("<li class='list-group-item'>" + elem.text() + "</li>");
 
-        if (instruction.hasClass("background-success")) {
-            instructionElem.addClass("list-group-item-success");
-        }
-        if (instruction.hasClass("background-danger")) {
-            instructionElem.addClass("list-group-item-danger");
-        }
+			if (elem.hasClass("background-success")) {
+				instructionElem.addClass("list-group-item-success");
+			}
+			if (elem.hasClass("background-danger")) {
+				instructionElem.addClass("list-group-item-danger");
+			}
 
-        if (count) {
-            instruction.addClass("out");
-            setTimeout(function() {
-                instruction.detach();
-                instructionList.append(instructionElem);
-                instructionList.animate({
-                    scrollTop: instructionList[0].scrollHeight
-                }, 200);
-            }, 160);
-        }
+			if (elem) {
+				elem.addClass("out");
+				setTimeout(function() {
+					elem.detach();
+					instructionList.append(instructionElem);
+					instructionList.animate({
+						scrollTop: instructionList[0].scrollHeight
+					}, 200);
+				}, 160);
+			}
+		}
+
     }	
 	
 	this.flush = function(cicles) {
 		pipeSim.fillNoop = cicles + 1;
-		$(".fetch,.decode,.load").not(".background-danger").removeClass("background-info");
+		//$(".fetch,.decode,.load").not(".background-danger").removeClass("background-info");
+		//$(".fetch,.decode,.load").not(".background-danger").addClass("background-disabled");
 		//console.log("pipeSim.fillNoop: " + pipeSim.fillNoop);
 		
 		
